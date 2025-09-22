@@ -33,6 +33,29 @@
 </head>
 <body>
     <script src="./js/script.js"></script>
+      <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyCLmu0AVrrz88EUdi8HDtRapUHYbVZ-yHQ",
+    authDomain: "snapit-now.firebaseapp.com",
+    projectId: "snapit-now",
+    storageBucket: "snapit-now.firebasestorage.app",
+    messagingSenderId: "672066953267",
+    appId: "1:672066953267:web:f972305cd9f4261fa54346",
+    measurementId: "G-KPV95KE9X5"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
   <div class="blur-overlay"></div>
   <div class="signup-container">
     <div class="signup-logo">
@@ -335,4 +358,5 @@
 </div>
 
 </body>
+
 </html>
