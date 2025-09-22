@@ -1,7 +1,7 @@
 {
   "name": "Snap It!",
   "short_name": "Snap It",
-  "start_url": "./app",
+  "start_url": "/app",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
@@ -14,3 +14,4 @@
   ]
 
 }
+
