@@ -5,6 +5,7 @@ window.onpopstate = function () {
 };
 
 
+
 // Visitor
  async function getVisitorInfo() {
       try {
@@ -69,6 +70,9 @@ function sharePage() {
     alert("Share not supported! Copy URL: " + window.location.href);
   }
 }
+
+navigator.serviceWorker.register('/firebase-messaging-sw.js');
+
 
 // Modal Handlers
 function openModal(modalId, title) {

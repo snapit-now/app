@@ -1,5 +1,4 @@
 User-agent: *
 Disallow:
 
-
-Sitemap: https://snapit-now.github.io/app/sitemap.xml
+Sitemap: https://snapit-now.netlify.app/sitemap.xml
