@@ -5,6 +5,17 @@ window.onpopstate = function () {
 };
 
 
+window.addEventListener('load', function() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/firebase-messaging-sw.js')
+      .then(function(registration) {
+        console.log('Registration successful, scope is:', registration.scope);
+      }).catch(function(err) {
+        console.log('Service worker registration failed, error:', err);
+      });
+  }
+});
+
 
 // Visitor
  async function getVisitorInfo() {
@@ -70,9 +81,6 @@ function sharePage() {
     alert("Share not supported! Copy URL: " + window.location.href);
   }
 }
-
-navigator.serviceWorker.register('/firebase-messaging-sw.js');
-
 
 // Modal Handlers
 function openModal(modalId, title) {
@@ -308,4 +316,5 @@ document.addEventListener("DOMContentLoaded", () => {
     const popup = document.getElementById("contact-popup");
     if (e.target === popup) popup.style.display = "none";
   });
+
 });
