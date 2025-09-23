@@ -133,17 +133,29 @@
     if ('Notification' in window) {
       const permission = await Notification.requestPermission();
       if (permission === 'granted') {
-        // Get the registration token for the device
         try {
-          const currentToken = await getToken(messaging, { vapidKey: 'BCOQGJQipo-tL_GnzHrGKqSG1ILb7dI2Gcu7BxNQJm57Uq08P9jRLJNvIPOENAdmCPem3kUlpmoSOGiLitjAHWw' });
-          if (currentToken) {
-            console.log('Notification permission granted. Token:', currentToken);
-            // You can send this token to your server to send notifications later
+          if ('serviceWorker' in navigator) {
+            // Register the service worker with proper path relative to app/
+            const registration = await navigator.serviceWorker.register('/app/firebase-messaging-sw.js');
+            console.log('Service Worker registered with scope:', registration.scope);
+
+            // Pass the service worker registration to getToken
+            const currentToken = await getToken(messaging, {
+              vapidKey: 'BCOQGJQipo-tL_GnzHrGKqSG1ILb7dI2Gcu7BxNQJm57Uq08P9jRLJNvIPOENAdmCPem3kUlpmoSOGiLitjAHWw',
+              serviceWorkerRegistration: registration
+            });
+
+            if (currentToken) {
+              console.log('Notification permission granted. Token:', currentToken);
+              // Send the token to your backend if needed
+            } else {
+              console.log('No registration token available. Request permission to generate one.');
+            }
           } else {
-            console.log('No registration token available. Request permission to generate one.');
+            console.log('Service workers are not supported in this browser.');
           }
         } catch (err) {
-          console.error('An error occurred while retrieving token. ', err);
+          console.error('An error occurred while retrieving token.', err);
         }
       } else {
         console.log('Notification permission denied.');
@@ -153,10 +165,9 @@
     }
   };
 
-  // Handle incoming messages while the app has focus
   onMessage(messaging, (payload) => {
-    console.log('Message received. ', payload);
-    // Customize notification display here
+    console.log('Message received.', payload);
+    // Customize notification display
   });
 </script>
 
@@ -392,6 +403,7 @@
 </body>
 
 </html>
+
 
 
 
