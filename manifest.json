@@ -1,8 +1,8 @@
 {
   "name": "Snap It!",
   "short_name": "Snap It",
-  "id": "./app",
-  "start_url": "./app/",
+  "id": "/app",
+  "start_url": "/app/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
@@ -34,4 +34,5 @@
     }
   ]
 }
+
 
