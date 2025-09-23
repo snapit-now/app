@@ -109,6 +109,58 @@
 </form>  
 </div>
 
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-analytics.js";
+  import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-messaging.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCLmu0AVrrz88EUdi8HDtRapUHYbVZ-yHQ",
+    authDomain: "snapit-now.firebaseapp.com",
+    projectId: "snapit-now",
+    storageBucket: "snapit-now.firebasestorage.app",
+    messagingSenderId: "672066953267",
+    appId: "1:672066953267:web:f972305cd9f4261fa54346",
+    measurementId: "G-KPV95KE9X5"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+  const messaging = getMessaging(app);
+
+  window.onload = async () => {
+    if ('Notification' in window) {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        // Get the registration token for the device
+        try {
+          const currentToken = await getToken(messaging, { vapidKey: 'BCOQGJQipo-tL_GnzHrGKqSG1ILb7dI2Gcu7BxNQJm57Uq08P9jRLJNvIPOENAdmCPem3kUlpmoSOGiLitjAHWw' });
+          if (currentToken) {
+            console.log('Notification permission granted. Token:', currentToken);
+            // You can send this token to your server to send notifications later
+          } else {
+            console.log('No registration token available. Request permission to generate one.');
+          }
+        } catch (err) {
+          console.error('An error occurred while retrieving token. ', err);
+        }
+      } else {
+        console.log('Notification permission denied.');
+      }
+    } else {
+      console.log('This browser does not support notifications.');
+    }
+  };
+
+  // Handle incoming messages while the app has focus
+  onMessage(messaging, (payload) => {
+    console.log('Message received. ', payload);
+    // Customize notification display here
+  });
+</script>
+
+
 <!-- Floating Share Button -->
 <img class="floating-share" onclick="sharePage()" title="Share" src="https://play-lh.googleusercontent.com/6ZG4yvJTwWZiqykiOhn84BPvz8ousDnyGUb4lVN2-NWsGGsywrppt8aOrG6ft-96Pes=s96-rw" alt="Share" />
 
@@ -162,133 +214,7 @@
 </div>
   <div class="copyright">
    Copyright &copy; 2025 Snap It!
-  </div>
-
-
-<form id="notificationForm">
-  <label for="title">Title</label>
-  <input type="text" id="title" name="title" value="Notification Title" required>
-
-  <label for="body">Body</label>
-  <textarea id="body" name="body" required>Notification Text</textarea>
-
-  <label for="icon">Icon URL</label>
-  <input type="url" id="icon" name="icon" value="https://your-domain.com/icon.png" required>
-
-  <label for="image">Image URL</label>
-  <input type="url" id="image" name="image" value="https://your-domain.com/image.jpg">
-
-  <label for="click_action">Click Action URL</label>
-  <input type="url" id="click_action" name="click_action" value="https://destination-url.com" required>
-
-  <button type="submit">Send</button>
-</form>
-
-<!-- Firebase setup -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-  import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-messaging.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyCLmu0AVrrz88EUdi8HDtRapUHYbVZ-yHQ",
-    authDomain: "snapit-now.firebaseapp.com",
-    projectId: "snapit-now",
-    storageBucket: "snapit-now.firebasestorage.app",
-    messagingSenderId: "672066953267",
-    appId: "1:672066953267:web:f972305cd9f4261fa54346",
-    measurementId: "G-KPV95KE9X5"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const messaging = getMessaging(app);
-
-  // Request permission and get FCM token
-  async function requestPermissionAndGetToken() {
-    try {
-      const permission = await Notification.requestPermission();
-      if (permission === 'granted') {
-        const currentToken = await getToken(messaging, { vapidKey: 'BCOQGJQipo-tL_GnzHrGKqSG1ILb7dI2Gcu7BxNQJm57Uq08P9jRLJNvIPOENAdmCPem3kUlpmoSOGiLitjAHWw' });
-        if (currentToken) {
-          console.log('FCM Token:', currentToken);
-          return currentToken;
-        } else {
-          console.warn('No registration token available.');
-        }
-      } else {
-        console.warn('Notification permission denied');
-      }
-    } catch (err) {
-      console.error('Error while retrieving token:', err);
-    }
-    return null;
-  }
-
-  // Handle foreground messages
-  onMessage(messaging, (payload) => {
-    console.log('Message received:', payload);
-
-    if (payload.notification) {
-      const { title, body, image, icon } = payload.notification;
-
-      const notification = new Notification(title, {
-        body: body,
-        icon: icon,
-        image: image
-      });
-
-      // Use FCM "fcmOptions" click_action if available
-      notification.onclick = () => {
-        const targetUrl = payload.fcmOptions?.link || '/';
-        window.open(targetUrl, '_blank');
-      };
-    }
-  });
-
-  // Local demo notification on form submit
-  document.getElementById('notificationForm').addEventListener('submit', async (event) => {
-    event.preventDefault();
-
-    const token = await requestPermissionAndGetToken();
-    if (!token) {
-      alert('Unable to get permission for notifications');
-      return;
-    }
-
-    const title = event.target.title.value;
-    const body = event.target.body.value;
-    const icon = event.target.icon.value;
-    const image = event.target.image.value;
-    const click_action = event.target.click_action.value;
-
-    // Trigger a local browser notification
-    const notification = new Notification(title, {
-      body: body,
-      icon: icon,
-      image: image
-    });
-
-    notification.onclick = () => {
-      window.open(click_action, '_blank');
-    };
-
-    alert('Notification triggered locally. For real push notifications, send this data + token to your backend.');
-  });
-</script>
-
-<script>
-  // Must be registered exactly at the root level
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./firebase-messaging-sw.js', { type: 'module' })
-      .then((registration) => {
-        console.log('Service Worker registered with scope:', registration.scope);
-      })
-      .catch((err) => {
-        console.error('Service Worker registration failed:', err);
-      });
-  }
-</script>
-
-  
+  </div>  
 </div>
 
 <!-- Overlay -->
@@ -466,6 +392,7 @@
 </body>
 
 </html>
+
 
 
 
