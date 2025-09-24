@@ -27,8 +27,20 @@
   <link rel="stylesheet" type="text/css" href="./css/styles.css">
 
   <link href="https://fonts.googleapis.com/css?family=Roboto:500,700&display=swap" rel="stylesheet">
-  
 
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "b44ec36d-dc9b-4d09-b25f-8a2359598149",
+      safari_web_id: "web.onesignal.auto.2e77cfdc-f6e8-4572-82d4-363b6713f2bc",
+      notifyButton: {
+        enable: true,
+      },
+    });
+  });
+</script>
 
 </head>
 <body>
@@ -106,23 +118,6 @@
 </div>      
 </form>  
 </div>
-
-
-
-<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-<script>
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  OneSignalDeferred.push(async function(OneSignal) {
-    await OneSignal.init({
-      appId: "b44ec36d-dc9b-4d09-b25f-8a2359598149",
-      safari_web_id: "web.onesignal.auto.2e77cfdc-f6e8-4572-82d4-363b6713f2bc",
-      notifyButton: {
-        enable: true,
-      },
-    });
-  });
-</script>
-
 
 <!-- Floating Share Button -->
 <img class="floating-share" onclick="sharePage()" title="Share" src="https://play-lh.googleusercontent.com/6ZG4yvJTwWZiqykiOhn84BPvz8ousDnyGUb4lVN2-NWsGGsywrppt8aOrG6ft-96Pes=s96-rw" alt="Share" />
