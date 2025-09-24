@@ -33,8 +33,6 @@
 </head>
 <body>
     <script src="./js/script.js"></script>
-
-
 <!-- HTML -->
   <div class="blur-overlay"></div>
   <div class="signup-container">
@@ -109,64 +107,19 @@
 </form>  
 </div>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-analytics.js";
-  import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-messaging.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyCLmu0AVrrz88EUdi8HDtRapUHYbVZ-yHQ",
-    authDomain: "snapit-now.firebaseapp.com",
-    projectId: "snapit-now",
-    storageBucket: "snapit-now.firebasestorage.app",
-    messagingSenderId: "672066953267",
-    appId: "1:672066953267:web:f972305cd9f4261fa54346",
-    measurementId: "G-KPV95KE9X5"
-  };
 
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
-  const messaging = getMessaging(app);
-
-  window.onload = async () => {
-    if ('Notification' in window) {
-      const permission = await Notification.requestPermission();
-      if (permission === 'granted') {
-        try {
-          if ('serviceWorker' in navigator) {
-            // Register the service worker with proper path relative to app/
-            const registration = await navigator.serviceWorker.register('/app/firebase-messaging-sw.js');
-            console.log('Service Worker registered with scope:', registration.scope);
-
-            // Pass the service worker registration to getToken
-            const currentToken = await getToken(messaging, {
-              vapidKey: 'BCOQGJQipo-tL_GnzHrGKqSG1ILb7dI2Gcu7BxNQJm57Uq08P9jRLJNvIPOENAdmCPem3kUlpmoSOGiLitjAHWw',
-              serviceWorkerRegistration: registration
-            });
-
-            if (currentToken) {
-              console.log('Notification permission granted. Token:', currentToken);
-              // Send the token to your backend if needed
-            } else {
-              console.log('No registration token available. Request permission to generate one.');
-            }
-          } else {
-            console.log('Service workers are not supported in this browser.');
-          }
-        } catch (err) {
-          console.error('An error occurred while retrieving token.', err);
-        }
-      } else {
-        console.log('Notification permission denied.');
-      }
-    } else {
-      console.log('This browser does not support notifications.');
-    }
-  };
-
-  onMessage(messaging, (payload) => {
-    console.log('Message received.', payload);
-    // Customize notification display
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "b44ec36d-dc9b-4d09-b25f-8a2359598149",
+      safari_web_id: "web.onesignal.auto.2e77cfdc-f6e8-4572-82d4-363b6713f2bc",
+      notifyButton: {
+        enable: true,
+      },
+    });
   });
 </script>
 
@@ -224,7 +177,7 @@
 </div>
   <div class="copyright">
    Copyright &copy; 2025 Snap It!
-  </div>  
+  </div>
 </div>
 
 <!-- Overlay -->
@@ -400,11 +353,4 @@
 </div>
 
 </body>
-
 </html>
-
-
-
-
-
-
