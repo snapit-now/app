@@ -62,22 +62,44 @@
             pointer-events: none; 
         }
 
-        /* --- LANDSCAPE MODE ADJUSTMENTS (Fullscreen) --- */
+        #player.loading {
+            opacity: 0;
+        }
+
+        /* --- Fullscreen API Styling (Applies when element is in native fullscreen) --- */
+        .player-wrapper:fullscreen,
+        .player-wrapper:-webkit-full-screen,
+        .player-wrapper:-moz-full-screen,
+        .player-wrapper:-ms-fullscreen {
+            width: 100vw;
+            height: 100vh;
+            max-width: 100vw;
+            background-color: black; 
+        }
+
+        .player-wrapper:fullscreen #player,
+        .player-wrapper:-webkit-full-screen #player,
+        .player-wrapper:-moz-full-screen #player,
+        .player-wrapper:-ms-fullscreen #player {
+            width: 100%;
+            height: 100%;
+            aspect-ratio: auto; 
+            border-radius: 0;
+        }
+
+
+        /* --- LANDSCAPE MODE ADJUSTMENTS (CSS fallback/sizing) --- */
         @media screen and (orientation: landscape) {
             .player-wrapper {
-                /* Fill the entire screen horizontally */
                 max-width: 100vw; 
-                height: 100vh;
-                margin: 0;
             }
             #player {
-                /* Set to horizontal aspect ratio */
                 aspect-ratio: 16 / 9; 
                 width: 100%;
                 height: 100%; 
                 max-width: 100%;
                 max-height: 100%;
-                border-radius: 0; /* Remove rounded corners for full screen */
+                border-radius: 0;
             }
             /* Adjust bottom bar for landscape (smaller and less intrusive) */
             .bottom-bar {
@@ -85,15 +107,11 @@
                 gap: 10px;
             }
             .bottom-bar a, .bottom-bar button {
-                padding: 10px 15px; /* Smaller buttons */
+                padding: 10px 15px; 
                 font-size: 14px;
             }
         }
         
-        #player.loading {
-            opacity: 0;
-        }
-
         /* --- THUMBNAIL WRAPPER STYLING --- */
         .thumbnail-wrapper {
             position: fixed;
@@ -102,7 +120,6 @@
             transform: translateX(-50%);
             width: calc(100% - 40px);
             max-width: 400px;
-            /* ... (rest of thumbnail styles) ... */
             display: flex;
             align-items: center;
             padding: 10px;
@@ -129,10 +146,6 @@
             margin-right: 15px;
         }
 
-        .thumbnail-info {
-            flex-grow: 1;
-        }
-
         .thumbnail-info p {
             margin: 0;
             font-size: 0.9rem;
@@ -157,7 +170,7 @@
             opacity: 1;
         }
 
-        /* Fixed Bottom Bar Styling (Portrait default) */
+        /* Fixed Bottom Bar Styling */
         .bottom-bar {
             position: fixed;
             bottom: 0;
@@ -210,7 +223,6 @@
             z-index: 1000;
         }
         
-        /* Nav buttons style applied to all buttons in the nav-buttons container */
         #nav-buttons button {
             background: rgba(255,255,255,0.2); 
             border: none;
@@ -233,7 +245,7 @@
 <body>
 
     <div class="swiper-container" id="swiper-container">
-        <div class="player-wrapper">
+        <div class="player-wrapper" id="player-wrapper">
             <div id="player"></div>
         </div>
     </div>
@@ -295,6 +307,8 @@
         const thumbnailWrapper = document.getElementById('thumbnail-wrapper');
         const playPauseBtn = document.getElementById('play-pause-btn');
         const muteUnmuteBtn = document.getElementById('mute-unmute-btn'); 
+        const playerWrapper = document.getElementById('player-wrapper');
+
 
         /**
          * Checks the URL for a 'v' parameter and updates the starting index.
@@ -319,10 +333,9 @@
             const ogImage = document.getElementById('og-image');
             const ogUrl = document.getElementById('og-url');
 
-            // 1. OG Title: Custom text + video title
-            ogTitle.content = `Check out this video: ${videoData.title}`; 
+            // Use the video title for the OG title
+            ogTitle.content = `Watch: ${videoData.title}`; 
             
-            // 2. OG Image: Use the reliable YouTube High-Quality thumbnail URL pattern
             const youtubeThumbnailUrl = `https://img.youtube.com/vi/${videoData.videoId}/hqdefault.jpg`;
             ogImage.content = youtubeThumbnailUrl;
             
@@ -331,36 +344,78 @@
             document.title = videoData.title;
         }
         
-        // --- Function to share with thumbnail image as a file (Web Share API Level 2) ---
+        // --- Fullscreen API Functions ---
+
+        /**
+         * Cross-browser function to request native fullscreen.
+         */
+        function requestFullscreen(element) {
+            if (element.requestFullscreen) {
+                element.requestFullscreen();
+            } else if (element.mozRequestFullScreen) { // Firefox
+                element.mozRequestFullScreen();
+            } else if (element.webkitRequestFullscreen) { // Chrome, Safari and Opera
+                element.webkitRequestFullscreen();
+            } else if (element.msRequestFullscreen) { // IE/Edge
+                element.msRequestFullscreen();
+            }
+        }
+
+        /**
+         * Cross-browser function to exit native fullscreen.
+         */
+        function exitFullscreen() {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.mozCancelFullScreen) { // Firefox
+                document.mozCancelFullScreen();
+            } else if (document.webkitExitFullscreen) { // Chrome, Safari and Opera
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) { // IE/Edge
+                document.msExitFullscreen();
+            }
+        }
+
+        /**
+         * Checks device orientation and triggers native fullscreen accordingly.
+         */
+        function checkOrientation() {
+            const isLandscape = window.matchMedia("(orientation: landscape)").matches;
+            
+            if (isLandscape) {
+                // When in landscape, automatically request native fullscreen
+                requestFullscreen(playerWrapper);
+            } else {
+                // When returning to portrait, exit native fullscreen if active
+                if (document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement) {
+                    exitFullscreen();
+                }
+            }
+        }
+
+        // --- Share Function (FIXED: Simplified title/text for better compatibility) ---
         async function shareWithThumbnail(videoTitle, videoUrl, thumbnailUrl) {
             
             const currentVideo = videos[currentVideoIndex];
-            updateOGTags(currentVideo, videoUrl); // Update OG Tags for crawlers
+            updateOGTags(currentVideo, videoUrl); 
 
             try {
-                // Fetch the thumbnail image as a Blob
                 const response = await fetch(thumbnailUrl);
                 const blob = await response.blob();
-                
-                // Create a File object
                 const file = new File([blob], "thumbnail.jpg", { type: blob.type });
-
-                // Prepare the share data with files
+                
+                // FIXED: Using a concise title and placing the full message/link in 'text'
                 const shareData = {
-                    title: videoTitle, 
-                    text: `${videoTitle}\n${videoUrl}`, // Newline separation
+                    title: "Watch this video", // Concise title
+                    text: `${videoTitle}\n${videoUrl}`, // Title and link separated by newline
                     url: videoUrl,
                     files: [file]
                 };
 
-                // Check if the system can share the files (Web Share API Level 2)
                 if (navigator.canShare && navigator.canShare({ files: shareData.files })) {
                     await navigator.share(shareData);
-                    console.log("Shared successfully with thumbnail!");
                 } else {
-                    console.warn("Sharing files not supported. Falling back to simple link share.");
-                    
-                    // Fallback to simple link share (Web Share API Level 1)
+                    // Fallback to simple link share
                     await navigator.share({
                         title: shareData.title,
                         text: shareData.text,
@@ -368,7 +423,7 @@
                     });
                 }
             } catch (error) {
-                console.error("Error sharing with thumbnail:", error);
+                console.error("Error sharing:", error);
                 
                 // Final Fallback: Copy link to clipboard
                 const fallbackText = `${videoTitle}\n${videoUrl}`;
@@ -380,7 +435,6 @@
 
 
         function onYouTubeIframeAPIReady() {
-            // Determine the starting video before player initialization
             checkURLForVideoId(); 
             
             player = new YT.Player('player', {
@@ -404,11 +458,12 @@
             });
         }
         
-        // --- Core Player Functions ---
+        // --- Core Player Functions (Unchanged) ---
 
         function onPlayerReady(event) {
             loadVideoByIndex(currentVideoIndex); 
             event.target.playVideo(); 
+            checkOrientation();
         }
 
         function onPlayerStateChange(event) {
@@ -440,7 +495,6 @@
             
             currentBuyNowUrl = video.buyNowUrl; 
 
-            // Update product thumbnail
             document.getElementById('buy-now-thumbnail').src = video.productThumbnailUrl || `https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`;
             
             thumbnailWrapper.classList.add('hidden'); 
@@ -461,7 +515,6 @@
                 player.playVideo();
                 playerElement.classList.remove('loading');
                 
-                // Show thumbnail after 5 seconds
                 thumbnailTimeout = setTimeout(() => {
                     thumbnailWrapper.classList.remove('hidden');
                 }, 5000); 
@@ -501,29 +554,16 @@
             }
         }
 
-        // --- Rotation Logic ---
-        function checkOrientation() {
-            const playerWrapper = document.querySelector('.player-wrapper');
-            const isLandscape = window.matchMedia("(orientation: landscape)").matches;
-            
-            // No need to manually add/remove classes, the CSS media queries handle the styling/sizing.
-            
-            // Optional: If you wanted to force true fullscreen, you would use:
-            // if (isLandscape && !document.fullscreenElement) { playerWrapper.requestFullscreen(); }
-            // else if (!isLandscape && document.fullscreenElement) { document.exitFullscreen(); }
-        }
-
         // --- Event Listener Setup ---
         
         document.addEventListener('DOMContentLoaded', () => {
             
             // Check orientation on load and on change
-            checkOrientation();
             window.addEventListener('orientationchange', checkOrientation);
 
             const swiper = document.getElementById('swiper-container');
             
-            // --- Swipe Up/Down Logic ---
+            // --- Swipe Up/Down Logic (Unchanged) ---
             let touchStartY = 0;
             let touchEndY = 0;
             const swipeThreshold = 50; 
@@ -545,26 +585,26 @@
             swiper.addEventListener('mouseup', e => { touchEndY = e.screenY; handleSwipe(); });
 
 
-            // --- Share Button Logic (Calling the async function) ---
+            // --- Share Button Logic ---
             document.getElementById('share-btn').addEventListener('click', async () => {
                 const currentVideo = videos[currentVideoIndex];
                 
                 const shareUrl = `${window.location.origin}${window.location.pathname}?v=${currentVideo.videoId}`; 
                 const thumbnailUrl = `https://img.youtube.com/vi/${currentVideo.videoId}/hqdefault.jpg`;
-                const videoTitle = `Check out this video: ${currentVideo.title}`; // Title format
+                // Use the plain video title
+                const videoTitle = currentVideo.title; 
 
-                // Execute the advanced share function
                 await shareWithThumbnail(videoTitle, shareUrl, thumbnailUrl);
             });
 
-            // --- Navigation and Controls ---
+            // --- Navigation and Controls (Unchanged) ---
             swiper.addEventListener('click', togglePlayPause);
             document.getElementById('upBtn').addEventListener('click', loadPreviousVideo);
             document.getElementById('downBtn').addEventListener('click', loadNextVideo);
             document.getElementById('play-pause-btn').addEventListener('click', togglePlayPause);
             document.getElementById('mute-unmute-btn').addEventListener('click', toggleMute);
 
-            // --- Thumbnail Click Handlers ---
+            // --- Thumbnail Click Handlers (Unchanged) ---
             thumbnailWrapper.addEventListener('click', (e) => {
                 if (e.target.id === 'close-thumbnail-btn') return;
                 
