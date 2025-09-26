@@ -41,7 +41,7 @@
         /* Player wrapper for sizing and centering */
         .player-wrapper {
             width: 100%;
-            max-width: 450px;
+            max-width: auto;
             height: 100%;
             display: flex;
             align-items: center;
@@ -185,7 +185,8 @@
 
             /* Ensure the player iframe scales correctly in landscape */
             .player-wrapper {
-                max-width: 70vh; /* Adjust width relative to viewport height for better landscape fitting */
+                /* Limits width to 70% of viewport height (the short side) for better fit */
+                max-width: auto; 
             }
         }
         /* ========================================================================= */
@@ -258,22 +259,46 @@
         // --- CUSTOMIZE YOUR VIDEOS HERE ---
         const videos = [
             {
-                videoId: 'hMy5za-m5Ew',
+                videoId: 'UVtcZP0UArA',
                 title: 'Beautiful Mountain Scenery',
                 buyNowUrl: 'https://example.com/product/mountain-trip',
                 productThumbnailUrl: 'https://m.media-amazon.com/images/I/71MXSFRW87L._AC_SY200_.jpg' 
             },
             {
-                videoId: 'OnP7gfwa5w0',
+                videoId: '6T0Nrzz-uAs',
                 title: 'Stunning Ocean Waves',
                 buyNowUrl: 'https://example.com/product/ocean-poster',
                 productThumbnailUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&h=100&q=80'
             },
             {
-                videoId: '9gopO8rbiX4',
-                title: 'Cozy Fireplace',
-                buyNowUrl: 'https://example.com/product/fireplace-screen',
-                productThumbnailUrl: 'https://images.unsplash.com/photo-1549488344-934dcfc96e05?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&h=100&q=80'
+                videoId: 'PIQGGKzakJI',
+                title: 'Cozy Fireplace1',
+                buyNowUrl: 'https://example.com/product/fireplace-screen1',
+                productThumbnailUrl: ''
+            },
+            {
+                videoId: 'b0ox5ujLE8Y',
+                title: 'Cozy Fireplace2',
+                buyNowUrl: 'https://example.com/product/fireplace-screen2',
+                productThumbnailUrl: ''
+            },
+            {
+                videoId: 'KFGu4xpNHyA',
+                title: 'Cozy Fireplace3',
+                buyNowUrl: 'https://example.com/product/fireplace-screen3',
+                productThumbnailUrl: ''
+            },
+            {
+                videoId: '0K-AEI4_t7Y',
+                title: 'Cozy Fireplace4',
+                buyNowUrl: 'https://example.com/product/fireplace-screen4',
+                productThumbnailUrl: ''
+            },
+            {
+                videoId: 'CslCs-U0_8E',
+                title: 'Cozy Fireplace5',
+                buyNowUrl: 'https://example.com/product/fireplace-screen5',
+                productThumbnailUrl: ''
             }
         ];
         // ------------------------------------
@@ -325,19 +350,18 @@
             document.title = videoData.title;
         }
         
-        // --- NEW: Function to share with thumbnail image as a file (Web Share API Level 2) ---
+        // --- Function to share with thumbnail image (Web Share API Level 2) ---
         async function shareWithThumbnail(videoTitle, videoUrl, thumbnailUrl) {
             
-            // 1. Update OG Tags immediately so crawlers pick them up on the shared page
             const currentVideo = videos[currentVideoIndex];
-            updateOGTags(currentVideo, videoUrl);
+            updateOGTags(currentVideo, videoUrl); // Update OG Tags immediately
 
             try {
                 // Fetch the thumbnail image as a Blob
                 const response = await fetch(thumbnailUrl);
                 const blob = await response.blob();
                 
-                // Create a File object from the Blob (required for sharing files)
+                // Create a File object from the Blob
                 const file = new File([blob], "thumbnail.jpg", { type: blob.type });
 
                 // Prepare the share data with files
@@ -352,7 +376,7 @@
                 if (navigator.canShare && navigator.canShare({ files: shareData.files })) {
                     await navigator.share(shareData);
                     console.log("Shared successfully with thumbnail!");
-                } else {
+                } else if (navigator.share) {
                     console.warn("Sharing files not supported. Falling back to simple link share.");
                     
                     // Fallback to simple link share (Web Share API Level 1)
@@ -361,18 +385,23 @@
                         text: shareData.text,
                         url: shareData.url
                     });
+                } else {
+                     // Final Fallback: Copy link to clipboard
+                    await navigator.clipboard.writeText(videoUrl); 
+                    alert('Sharing not supported on this device. Link copied to clipboard!'); 
                 }
             } catch (error) {
-                console.error("Error sharing with thumbnail:", error);
-                
-                // Final Fallback: Copy link to clipboard
-                await navigator.clipboard.writeText(videoUrl); 
-                alert('Share failed. Link copied to clipboard!'); 
+                console.error("Error during sharing:", error);
+                if (navigator.clipboard) {
+                    await navigator.clipboard.writeText(videoUrl); 
+                    alert('Share failed. Link copied to clipboard!'); 
+                }
             }
         }
-        // ----------------------------------------------------------------------------------
+        // ----------------------------------------------------------------------
 
 
+        // This function is called automatically when the YouTube API script loads.
         function onYouTubeIframeAPIReady() {
             // Determine the starting video before player initialization
             checkURLForVideoId(); 
@@ -404,8 +433,7 @@
             // Load the *first* video based on the resolved index (from URL or default 0)
             loadVideoByIndex(currentVideoIndex); 
             
-            // Fix: Start playing immediately to ensure auto-play works. 
-            // This is especially important for the video loaded via the shared link.
+            // Start playing immediately.
             event.target.playVideo(); 
         }
 
@@ -451,6 +479,7 @@
 
             player.loadVideoById(video.videoId);
             
+            // Apply current mute state
             if (isMuted) {
                 player.mute();
                 muteUnmuteBtn.textContent = '🔇';
@@ -461,17 +490,19 @@
                 muteUnmuteBtn.setAttribute('aria-label', 'Mute video');
             }
             
+            // Add a small delay for video load and then remove loading state
             setTimeout(() => {
                 player.playVideo();
                 playerElement.classList.remove('loading');
                 
-                // Show thumbnail after 5 seconds
+                // Show product thumbnail/link after 5 seconds
                 thumbnailTimeout = setTimeout(() => {
                     thumbnailWrapper.classList.remove('hidden');
                 }, 5000); 
 
             }, 500);
 
+            // Update bottom bar link
             document.getElementById('buy-now-link').href = video.buyNowUrl;
         }
 
@@ -521,12 +552,16 @@
 
             function handleSwipe() {
                 const deltaY = touchStartY - touchEndY;
+                // Check if it was a vertical swipe, not a short tap
                 if (Math.abs(deltaY) > swipeThreshold) {
                     if (deltaY > 0) { // Swiped Up
                         loadNextVideo();
                     } else { // Swiped Down
                         loadPreviousVideo();
                     }
+                } else if (Math.abs(deltaY) < 10) {
+                    // Treat short movement as a tap to play/pause, unless a button was clicked
+                    // We let the swiper.addEventListener('click', ...) handle this.
                 }
             }
 
@@ -537,22 +572,29 @@
             swiper.addEventListener('mouseup', e => { touchEndY = e.screenY; handleSwipe(); });
 
 
-            // --- Share Button Logic (Calling the new async function) ---
+            // --- Share Button Logic ---
             document.getElementById('share-btn').addEventListener('click', async () => {
                 const currentVideo = videos[currentVideoIndex];
                 
-                // 1. Construct the share URL with the current video ID
+                // Construct the share URL with the current video ID
                 const shareUrl = `${window.location.origin}${window.location.pathname}?v=${currentVideo.videoId}`; 
                 
-                // 2. Define the thumbnail URL (High Quality YouTube Thumbnail)
+                // Define the thumbnail URL (High Quality YouTube Thumbnail)
                 const thumbnailUrl = `https://img.youtube.com/vi/${currentVideo.videoId}/hqdefault.jpg`;
 
-                // 3. Execute the advanced share function
+                // Execute the advanced share function
                 await shareWithThumbnail(currentVideo.title, shareUrl, thumbnailUrl);
             });
 
             // --- Navigation and Controls ---
+            // Tap/Click anywhere on the video area (swiper) to play/pause
             swiper.addEventListener('click', togglePlayPause);
+            
+            // Prevent the play/pause tap action when clicking on a control button
+            document.getElementById('nav-buttons').addEventListener('click', (e) => {
+                e.stopPropagation(); 
+            });
+
             document.getElementById('upBtn').addEventListener('click', loadPreviousVideo);
             document.getElementById('downBtn').addEventListener('click', loadNextVideo);
             document.getElementById('play-pause-btn').addEventListener('click', togglePlayPause);
@@ -560,8 +602,13 @@
 
             // --- Thumbnail Click Handlers ---
             thumbnailWrapper.addEventListener('click', (e) => {
-                if (e.target.id === 'close-thumbnail-btn') return;
+                // If the close button was clicked, stop.
+                if (e.target.id === 'close-thumbnail-btn') {
+                    e.stopPropagation();
+                    return;
+                }
                 
+                // Otherwise, click opens the buy now link
                 if (currentBuyNowUrl && currentBuyNowUrl !== '#') {
                     window.open(currentBuyNowUrl, '_blank');
                 }
