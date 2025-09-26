@@ -254,385 +254,390 @@
     </div>
 
 <script src="https://www.youtube.com/iframe_api"></script>
- 
+ 
 <script>
-    // --- CUSTOMIZE YOUR VIDEOS HERE ---
-    const videos = [
-        {
-            videoId: 'UVtcZP0UArA',
-            title: 'Beautiful Mountain Scenery',
-            buyNowUrl: 'https://example.com/product/mountain-trip',
-            productThumbnailUrl: 'https://m.media-amazon.com/images/I/71MXSFRW87L._AC_SY200_.jpg' 
-        },
-        {
-            videoId: '6T0Nrzz-uAs',
-            title: 'Stunning Ocean Waves',
-            buyNowUrl: 'https://example.com/product/ocean-poster',
-            productThumbnailUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&h=100&q=80'
-        },
-        {
-            videoId: 'PIQGGKzakJI',
-            title: 'Cozy Fireplace1',
-            buyNowUrl: 'https://example.com/product/fireplace-screen1',
-            productThumbnailUrl: ''
-        },
-        {
-            videoId: 'b0ox5ujLE8Y',
-            title: 'Cozy Fireplace2',
-            buyNowUrl: 'https://example.com/product/fireplace-screen2',
-            productThumbnailUrl: ''
-        },
-        {
-            videoId: 'KFGu4xpNHyA',
-            title: 'Cozy Fireplace3',
-            buyNowUrl: 'https://example.com/product/fireplace-screen3',
-            productThumbnailUrl: ''
-        },
-        {
-            videoId: '0K-AEI4_t7Y',
-            title: 'Cozy Fireplace4',
-            buyNowUrl: 'https://example.com/product/fireplace-screen4',
-            productThumbnailUrl: ''
-        },
-        {
-            videoId: 'CslCs-U0_8E',
-            title: 'Cozy Fireplace5',
-            buyNowUrl: 'https://example.com/product/fireplace-screen5',
-            productThumbnailUrl: ''
-        }
-    ];
-    // ------------------------------------
+    // --- CUSTOMIZE YOUR VIDEOS HERE ---
+    const videos = [
+        {
+            videoId: 'UVtcZP0UArA',
+            title: 'Beautiful Mountain Scenery',
+            buyNowUrl: 'https://example.com/product/mountain-trip',
+            productThumbnailUrl: 'https://m.media-amazon.com/images/I/71MXSFRW87L._AC_SY200_.jpg' 
+        },
+        {
+            videoId: '6T0Nrzz-uAs',
+            title: 'Stunning Ocean Waves',
+            buyNowUrl: 'https://example.com/product/ocean-poster',
+            productThumbnailUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&h=100&q=80'
+        },
+        {
+            videoId: 'PIQGGKzakJI',
+            title: 'Cozy Fireplace1',
+            buyNowUrl: 'https://example.com/product/fireplace-screen1',
+            productThumbnailUrl: ''
+        },
+        {
+            videoId: 'b0ox5ujLE8Y',
+            title: 'Cozy Fireplace2',
+            buyNowUrl: 'https://example.com/product/fireplace-screen2',
+            productThumbnailUrl: ''
+        },
+        {
+            videoId: 'KFGu4xpNHyA',
+            title: 'Cozy Fireplace3',
+            buyNowUrl: 'https://example.com/product/fireplace-screen3',
+            productThumbnailUrl: ''
+        },
+        {
+            videoId: '0K-AEI4_t7Y',
+            title: 'Cozy Fireplace4',
+            buyNowUrl: 'https://example.com/product/fireplace-screen4',
+            productThumbnailUrl: ''
+        },
+        {
+            videoId: 'CslCs-U0_8E',
+            title: 'Cozy Fireplace5',
+            buyNowUrl: 'https://example.com/product/fireplace-screen5',
+            productThumbnailUrl: ''
+        }
+    ];
+    // ------------------------------------
 
-    let player;
-    let currentVideoIndex = 0; 
-    let isMuted = false; 
-    let currentBuyNowUrl = '#'; 
-    let thumbnailTimeout; 
-    
-    const thumbnailWrapper = document.getElementById('thumbnail-wrapper');
-    const buyNowThumbnail = document.getElementById('buy-now-thumbnail');
-    const playPauseBtn = document.getElementById('play-pause-btn');
-    const muteUnmuteBtn = document.getElementById('mute-unmute-btn'); 
+    let player;
+    let currentVideoIndex = 0; 
+    let isMuted = false; 
+    let currentBuyNowUrl = '#'; 
+    let thumbnailTimeout; 
+    
+    const thumbnailWrapper = document.getElementById('thumbnail-wrapper');
+    const buyNowThumbnail = document.getElementById('buy-now-thumbnail');
+    const playPauseBtn = document.getElementById('play-pause-btn');
+    const muteUnmuteBtn = document.getElementById('mute-unmute-btn'); 
 
-    /**
-     * Checks the URL for a 'v' parameter and updates the starting index.
-     * **MODIFIED to add external video IDs to the list.**
-     */
-    function checkURLForVideoId() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const videoIdFromUrl = urlParams.get('v');
+    /**
+     * Checks the URL for a 'v' parameter and updates the starting index.
+     * **MODIFIED to add external video IDs to the list.**
+     */
+    function checkURLForVideoId() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const videoIdFromUrl = urlParams.get('v');
 
-        if (videoIdFromUrl) {
-            const index = videos.findIndex(v => v.videoId === videoIdFromUrl);
-            if (index !== -1) {
-                currentVideoIndex = index;
-            } else {
-                // Logic added to fulfill user request: Video ID not found, so add it to the beginning
-                const newVideoEntry = {
-                    videoId: videoIdFromUrl,
-                    title: `External Video: ${videoIdFromUrl}`, // Placeholder title, could be fetched via YouTube Data API if running server-side
-                    buyNowUrl: document.getElementById('website').onclick.toString().match(/window\.open\('([^']*)'/)[1] || '#', // Use the website link or a default
-                    productThumbnailUrl: `https://img.youtube.com/vi/${videoIdFromUrl}/hqdefault.jpg`
-                };
-                videos.unshift(newVideoEntry); // Add to the start of the array
-                currentVideoIndex = 0; // Ensure we start with this video
-                console.log(`Added external video ID ${videoIdFromUrl} to the list.`);
-            }
-        }
-    }
+        if (videoIdFromUrl) {
+            const index = videos.findIndex(v => v.videoId === videoIdFromUrl);
+            if (index !== -1) {
+                currentVideoIndex = index;
+            } else {
+                // Logic added to fulfill user request: Video ID not found, so add it to the beginning
+                const newVideoEntry = {
+                    videoId: videoIdFromUrl,
+                    title: `External Video: ${videoIdFromUrl}`, // Placeholder title, could be fetched via YouTube Data API if running server-side
+                    buyNowUrl: document.getElementById('website').onclick.toString().match(/window\.open\('([^']*)'/)[1] || '#', // Use the website link or a default
+                    productThumbnailUrl: `https://img.youtube.com/vi/${videoIdFromUrl}/hqdefault.jpg`
+                };
+                videos.unshift(newVideoEntry); // Add to the start of the array
+                currentVideoIndex = 0; // Ensure we start with this video
+                console.log(`Added external video ID ${videoIdFromUrl} to the list.`);
+            }
+        }
+    }
 
-    /**
-     * Updates the Open Graph (OG) meta tags for social sharing fallback.
-     */
-    function updateOGTags(videoData, shareUrl) {
-        const ogTitle = document.getElementById('og-title');
-        const ogImage = document.getElementById('og-image');
-        const ogUrl = document.getElementById('og-url');
+    /**
+     * Updates the Open Graph (OG) meta tags for social sharing fallback.
+     */
+    function updateOGTags(videoData, shareUrl) {
+        const ogTitle = document.getElementById('og-title');
+        const ogImage = document.getElementById('og-image');
+        const ogUrl = document.getElementById('og-url');
 
-        // 1. OG Title: Custom text + video title
-        ogTitle.content = `Check out this video: ${videoData.title}`; 
-        
-        // 2. OG Image: Use the reliable YouTube High-Quality thumbnail URL pattern
-        const youtubeThumbnailUrl = `https://img.youtube.com/vi/${videoData.videoId}/hqdefault.jpg`;
-        ogImage.content = youtubeThumbnailUrl;
-        
-        ogUrl.content = shareUrl;
+        // 1. OG Title: Custom text + video title
+        ogTitle.content = `Check out this video: ${videoData.title}`; 
+        
+        // 2. OG Image: Use the reliable YouTube High-Quality thumbnail URL pattern
+        const youtubeThumbnailUrl = `https://img.youtube.com/vi/${videoData.videoId}/hqdefault.jpg`;
+        ogImage.content = youtubeThumbnailUrl;
+        
+        ogUrl.content = shareUrl;
 
-        // Ensure the page title also matches
-        document.title = videoData.title;
-    }
-    
-    // --- Function to share with thumbnail image (Web Share API Level 2) ---
-    async function shareWithThumbnail(videoTitle, videoUrl, thumbnailUrl) {
-        
-        const currentVideo = videos[currentVideoIndex];
-        updateOGTags(currentVideo, videoUrl); // Update OG Tags immediately
+        // Ensure the page title also matches
+        document.title = videoData.title;
+    }
+    
+    // --- Function to share with thumbnail image (Web Share API Level 2) ---
+    async function shareWithThumbnail(videoTitle, videoUrl, thumbnailUrl) {
+        
+        const currentVideo = videos[currentVideoIndex];
+        updateOGTags(currentVideo, videoUrl); // Update OG Tags immediately
 
-        try {
-            // Fetch the thumbnail image as a Blob
-            const response = await fetch(thumbnailUrl);
-            const blob = await response.blob();
-            
-            // Create a File object from the Blob
-            const file = new File([blob], "thumbnail.jpg", { type: blob.type });
+        try {
+            // Fetch the thumbnail image as a Blob
+            const response = await fetch(thumbnailUrl);
+            const blob = await response.blob();
+            
+            // Create a File object from the Blob
+            const file = new File([blob], "thumbnail.jpg", { type: blob.type });
 
-            // Prepare the share data with files
-            const shareData = {
-                title: `Check out this video: ${videoTitle}`,
-                text: `Watch this video: ${videoTitle}`,
-                url: videoUrl,
-                files: [file] // Include the thumbnail image file
-            };
+            // Prepare the share data with files
+            const shareData = {
+                // MODIFIED: Set the subject/title to the video title for simplicity
+                title: videoTitle, 
+                // MODIFIED: Set the body text to the requested format: Title + Newline + Custom Text
+                text: `${videoTitle}\nCheck out this video:`, 
+                url: videoUrl,
+                files: [file] // Include the thumbnail image file
+            };
 
-            // Check if the system can share the files (Web Share API Level 2)
-            if (navigator.canShare && navigator.canShare({ files: shareData.files })) {
-                await navigator.share(shareData);
-                console.log("Shared successfully with thumbnail!");
-            } else if (navigator.share) {
-                console.warn("Sharing files not supported. Falling back to simple link share.");
-                
-                // Fallback to simple link share (Web Share API Level 1)
-                await navigator.share({
-                    title: shareData.title,
-                    text: shareData.text,
-                    url: shareData.url
-                });
-            } else {
-                 // Final Fallback: Copy link to clipboard
-                await navigator.clipboard.writeText(videoUrl); 
-                alert('Sharing not supported on this device. Link copied to clipboard!'); 
-            }
-        } catch (error) {
-            console.error("Error during sharing:", error);
-            if (navigator.clipboard) {
-                await navigator.clipboard.writeText(videoUrl); 
-                alert('Share failed. Link copied to clipboard!'); 
-            }
-        }
-    }
-    // ----------------------------------------------------------------------
-
-
-    // This function is called automatically when the YouTube API script loads.
-    function onYouTubeIframeAPIReady() {
-        // Determine the starting video before player initialization
-        checkURLForVideoId(); 
-        
-        player = new YT.Player('player', {
-            height: '100%',
-            width: '100%',
-            videoId: videos[currentVideoIndex].videoId, // Start with the determined video
-            playerVars: {
-                'playsinline': 1, 
-                'autoplay': 1, // Crucial for automatic play when the page loads
-                'controls': 0, 
-                'loop': 0, 
-                'modestbranding': 1, 
-                'rel': 0,
-                'showinfo': 0 
-            },
-            events: {
-                'onReady': onPlayerReady,
-                'onStateChange': onPlayerStateChange,
-                'onError': onPlayerError
-            }
-        });
-    }
-    
-    // --- Core Player Functions ---
-
-    function onPlayerReady(event) {
-        // Load the *first* video based on the resolved index (from URL or default 0)
-        loadVideoByIndex(currentVideoIndex); 
-        
-        // Start playing immediately.
-        event.target.playVideo(); 
-    }
-
-    function onPlayerStateChange(event) {
-        const state = event.data;
-        if (state === YT.PlayerState.PLAYING) {
-            playPauseBtn.textContent = '❚❚'; 
-            playPauseBtn.setAttribute('aria-label', 'Pause video');
-        } else if (state === YT.PlayerState.PAUSED || state === YT.PlayerState.BUFFERING) {
-            playPauseBtn.textContent = '▶'; 
-            playPauseBtn.setAttribute('aria-label', 'Play video');
-        } else if (state === YT.PlayerState.ENDED) {
-            loadNextVideo();
-        }
-    }
-
-    function onPlayerError(event) {
-        console.error("YouTube Player Error:", event.data);
-        const unavailableErrorCodes = [2, 100, 101, 150];
-        // This handles the user's second request: "if video not avalable in youtube try to play next video"
-        if (unavailableErrorCodes.includes(event.data)) {
-            console.log("Video is unavailable. Loading next video automatically.");
-            loadNextVideo();
-        }
-    }
-
-    function loadVideoByIndex(index) {
-        if (index < 0 || index >= videos.length) return;
-        
-        const playerElement = document.getElementById('player');
-        playerElement.classList.add('loading');
-        
-        currentVideoIndex = index;
-        const video = videos[currentVideoIndex];
-        
-        currentBuyNowUrl = video.buyNowUrl; 
-
-        // --- Set Thumbnail Image & Control Visibility ---
-        buyNowThumbnail.src = video.productThumbnailUrl || `https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`;
-        
-        thumbnailWrapper.classList.add('hidden'); 
-
-        if (thumbnailTimeout) clearTimeout(thumbnailTimeout);
-
-        player.loadVideoById(video.videoId);
-        
-        // Apply current mute state
-        if (player.isMuted() || isMuted) { // Check player.isMuted() on first load
-            player.mute();
-            isMuted = true;
-            muteUnmuteBtn.textContent = '🔇';
-            muteUnmuteBtn.setAttribute('aria-label', 'Unmute video');
-        } else {
-            player.unMute(); 
-            isMuted = false;
-            muteUnmuteBtn.textContent = '🔊';
-            muteUnmuteBtn.setAttribute('aria-label', 'Mute video');
-        }
-        
-        // Add a small delay for video load and then remove loading state
-        setTimeout(() => {
-            player.playVideo();
-            playerElement.classList.remove('loading');
-            
-            // Show product thumbnail/link after 5 seconds
-            thumbnailTimeout = setTimeout(() => {
-                thumbnailWrapper.classList.remove('hidden');
-            }, 5000); 
-
-        }, 500);
-
-        // Update bottom bar link
-        document.getElementById('buy-now-link').href = video.buyNowUrl;
-    }
-
-    function loadNextVideo() {
-        const nextIndex = (currentVideoIndex + 1) % videos.length;
-        loadVideoByIndex(nextIndex);
-    }
-
-    function loadPreviousVideo() {
-        const prevIndex = (currentVideoIndex - 1 + videos.length) % videos.length;
-        loadVideoByIndex(prevIndex);
-    }
-
-    function togglePlayPause() {
-        if (player.getPlayerState() === YT.PlayerState.PLAYING) {
-            player.pauseVideo();
-        } else {
-            player.playVideo();
-        }
-    }
-
-    function toggleMute() {
-        if (player.isMuted()) {
-            player.unMute();
-            isMuted = false;
-            muteUnmuteBtn.textContent = '🔊'; 
-            muteUnmuteBtn.setAttribute('aria-label', 'Unmute video');
-        } else {
-            player.mute();
-            isMuted = true;
-            muteUnmuteBtn.textContent = '🔇'; 
-            muteUnmuteBtn.setAttribute('aria-label', 'Mute video');
-        }
-    }
+            // Check if the system can share the files (Web Share API Level 2)
+            if (navigator.canShare && navigator.canShare({ files: shareData.files })) {
+                await navigator.share(shareData);
+                console.log("Shared successfully with thumbnail!");
+            } else if (navigator.share) {
+                console.warn("Sharing files not supported. Falling back to simple link share.");
+                
+                // Fallback to simple link share (Web Share API Level 1)
+                await navigator.share({
+                    title: shareData.title,
+                    text: shareData.text,
+                    url: shareData.url
+                });
+            } else {
+                // Final Fallback: Copy formatted text and link to clipboard
+                const clipboardText = `${videoTitle}\nCheck out this video: ${videoUrl}`;
+                await navigator.clipboard.writeText(clipboardText); 
+                alert('Sharing not supported on this device. Text and link copied to clipboard!'); 
+            }
+        } catch (error) {
+            console.error("Error during sharing:", error);
+            if (navigator.clipboard) {
+                // Fallback in case of share error: Copy formatted text and link to clipboard
+                const clipboardText = `${videoTitle}\nCheck out this video: ${videoUrl}`;
+                await navigator.clipboard.writeText(clipboardText); 
+                alert('Share failed. Text and link copied to clipboard!'); 
+            }
+        }
+    }
+    // ----------------------------------------------------------------------
 
 
-    // --- Event Listener Setup ---
-    
-    document.addEventListener('DOMContentLoaded', () => {
-        
-        const swiper = document.getElementById('swiper-container');
-        
-        // --- Swipe Up/Down Logic ---
-        let touchStartY = 0;
-        let touchEndY = 0;
-        const swipeThreshold = 50; 
+    // This function is called automatically when the YouTube API script loads.
+    function onYouTubeIframeAPIReady() {
+        // Determine the starting video before player initialization
+        checkURLForVideoId(); 
+        
+        player = new YT.Player('player', {
+            height: '100%',
+            width: '100%',
+            videoId: videos[currentVideoIndex].videoId, // Start with the determined video
+            playerVars: {
+                'playsinline': 1, 
+                'autoplay': 1, // Crucial for automatic play when the page loads
+                'controls': 0, 
+                'loop': 0, 
+                'modestbranding': 1, 
+                'rel': 0,
+                'showinfo': 0 
+            },
+            events: {
+                'onReady': onPlayerReady,
+                'onStateChange': onPlayerStateChange,
+                'onError': onPlayerError
+            }
+        });
+    }
+    
+    // --- Core Player Functions ---
 
-        function handleSwipe() {
-            const deltaY = touchStartY - touchEndY;
-            // Check if it was a vertical swipe, not a short tap
-            if (Math.abs(deltaY) > swipeThreshold) {
-                if (deltaY > 0) { // Swiped Up
-                    loadNextVideo();
-                } else { // Swiped Down
-                    loadPreviousVideo();
-                }
-            } else if (Math.abs(deltaY) < 10) {
-                // We let the swiper.addEventListener('click', ...) handle this.
-            }
-        }
+    function onPlayerReady(event) {
+        // Load the *first* video based on the resolved index (from URL or default 0)
+        loadVideoByIndex(currentVideoIndex); 
+        
+        // Start playing immediately.
+        event.target.playVideo(); 
+    }
 
-        // Bind touch/mouse events for swiping
-        swiper.addEventListener('touchstart', e => { touchStartY = e.changedTouches[0].screenY; }, { passive: true });
-        swiper.addEventListener('touchend', e => { touchEndY = e.changedTouches[0].screenY; handleSwipe(); }, { passive: true });
-        swiper.addEventListener('mousedown', e => { touchStartY = e.screenY; });
-        swiper.addEventListener('mouseup', e => { touchEndY = e.screenY; handleSwipe(); });
+    function onPlayerStateChange(event) {
+        const state = event.data;
+        if (state === YT.PlayerState.PLAYING) {
+            playPauseBtn.textContent = '❚❚'; 
+            playPauseBtn.setAttribute('aria-label', 'Pause video');
+        } else if (state === YT.PlayerState.PAUSED || state === YT.PlayerState.BUFFERING) {
+            playPauseBtn.textContent = '▶'; 
+            playPauseBtn.setAttribute('aria-label', 'Play video');
+        } else if (state === YT.PlayerState.ENDED) {
+            loadNextVideo();
+        }
+    }
+
+    function onPlayerError(event) {
+        console.error("YouTube Player Error:", event.data);
+        const unavailableErrorCodes = [2, 100, 101, 150];
+        // This handles the user's second request: "if video not avalable in youtube try to play next video"
+        if (unavailableErrorCodes.includes(event.data)) {
+            console.log("Video is unavailable. Loading next video automatically.");
+            loadNextVideo();
+        }
+    }
+
+    function loadVideoByIndex(index) {
+        if (index < 0 || index >= videos.length) return;
+        
+        const playerElement = document.getElementById('player');
+        playerElement.classList.add('loading');
+        
+        currentVideoIndex = index;
+        const video = videos[currentVideoIndex];
+        
+        currentBuyNowUrl = video.buyNowUrl; 
+
+        // --- Set Thumbnail Image & Control Visibility ---
+        buyNowThumbnail.src = video.productThumbnailUrl || `https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`;
+        
+        thumbnailWrapper.classList.add('hidden'); 
+
+        if (thumbnailTimeout) clearTimeout(thumbnailTimeout);
+
+        player.loadVideoById(video.videoId);
+        
+        // Apply current mute state
+        if (player.isMuted() || isMuted) { // Check player.isMuted() on first load
+            player.mute();
+            isMuted = true;
+            muteUnmuteBtn.textContent = '🔇';
+            muteUnmuteBtn.setAttribute('aria-label', 'Unmute video');
+        } else {
+            player.unMute(); 
+            isMuted = false;
+            muteUnmuteBtn.textContent = '🔊';
+            muteUnmuteBtn.setAttribute('aria-label', 'Mute video');
+        }
+        
+        // Add a small delay for video load and then remove loading state
+        setTimeout(() => {
+            player.playVideo();
+            playerElement.classList.remove('loading');
+            
+            // Show product thumbnail/link after 5 seconds
+            thumbnailTimeout = setTimeout(() => {
+                thumbnailWrapper.classList.remove('hidden');
+            }, 5000); 
+
+        }, 500);
+
+        // Update bottom bar link
+        document.getElementById('buy-now-link').href = video.buyNowUrl;
+    }
+
+    function loadNextVideo() {
+        const nextIndex = (currentVideoIndex + 1) % videos.length;
+        loadVideoByIndex(nextIndex);
+    }
+
+    function loadPreviousVideo() {
+        const prevIndex = (currentVideoIndex - 1 + videos.length) % videos.length;
+        loadVideoByIndex(prevIndex);
+    }
+
+    function togglePlayPause() {
+        if (player.getPlayerState() === YT.PlayerState.PLAYING) {
+            player.pauseVideo();
+        } else {
+            player.playVideo();
+        }
+    }
+
+    function toggleMute() {
+        if (player.isMuted()) {
+            player.unMute();
+            isMuted = false;
+            muteUnmuteBtn.textContent = '🔊'; 
+            muteUnmuteBtn.setAttribute('aria-label', 'Unmute video');
+        } else {
+            player.mute();
+            isMuted = true;
+            muteUnmuteBtn.textContent = '🔇'; 
+            muteUnmuteBtn.setAttribute('aria-label', 'Mute video');
+        }
+    }
+
+    // --- Event Listener Setup ---
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        
+        const swiper = document.getElementById('swiper-container');
+        
+        // --- Swipe Up/Down Logic ---
+        let touchStartY = 0;
+        let touchEndY = 0;
+        const swipeThreshold = 50; 
+
+        function handleSwipe() {
+            const deltaY = touchStartY - touchEndY;
+            // Check if it was a vertical swipe, not a short tap
+            if (Math.abs(deltaY) > swipeThreshold) {
+                if (deltaY > 0) { // Swiped Up
+                    loadNextVideo();
+                } else { // Swiped Down
+                    loadPreviousVideo();
+                }
+            } else if (Math.abs(deltaY) < 10) {
+                // We let the swiper.addEventListener('click', ...) handle this.
+            }
+        }
+
+        // Bind touch/mouse events for swiping
+        swiper.addEventListener('touchstart', e => { touchStartY = e.changedTouches[0].screenY; }, { passive: true });
+        swiper.addEventListener('touchend', e => { touchEndY = e.changedTouches[0].screenY; handleSwipe(); }, { passive: true });
+        swiper.addEventListener('mousedown', e => { touchStartY = e.screenY; });
+        swiper.addEventListener('mouseup', e => { touchEndY = e.screenY; handleSwipe(); });
 
 
-        // --- Share Button Logic ---
-        document.getElementById('share-btn').addEventListener('click', async () => {
-            const currentVideo = videos[currentVideoIndex];
-            
-            // Construct the share URL with the current video ID
-            const shareUrl = `${window.location.origin}${window.location.pathname}?v=${currentVideo.videoId}`; 
-            
-            // Define the thumbnail URL (High Quality YouTube Thumbnail)
-            const thumbnailUrl = `https://img.youtube.com/vi/${currentVideo.videoId}/hqdefault.jpg`;
+        // --- Share Button Logic ---
+        document.getElementById('share-btn').addEventListener('click', async () => {
+            const currentVideo = videos[currentVideoIndex];
+            
+            // Construct the share URL with the current video ID
+            const shareUrl = `${window.location.origin}${window.location.pathname}?v=${currentVideo.videoId}`; 
+            
+            // Define the thumbnail URL (High Quality YouTube Thumbnail)
+            const thumbnailUrl = `https://img.youtube.com/vi/${currentVideo.videoId}/hqdefault.jpg`;
 
-            // Execute the advanced share function
-            await shareWithThumbnail(currentVideo.title, shareUrl, thumbnailUrl);
-        });
+            // Execute the advanced share function
+            await shareWithThumbnail(currentVideo.title, shareUrl, thumbnailUrl);
+        });
 
-        // --- Navigation and Controls ---
-        // Tap/Click anywhere on the video area (swiper) to play/pause
-        swiper.addEventListener('click', togglePlayPause);
-        
-        // Prevent the play/pause tap action when clicking on a control button
-        document.getElementById('nav-buttons').addEventListener('click', (e) => {
-            e.stopPropagation(); 
-        });
+        // --- Navigation and Controls ---
+        // Tap/Click anywhere on the video area (swiper) to play/pause
+        swiper.addEventListener('click', togglePlayPause);
+        
+        // Prevent the play/pause tap action when clicking on a control button
+        document.getElementById('nav-buttons').addEventListener('click', (e) => {
+            e.stopPropagation(); 
+        });
 
-        document.getElementById('upBtn').addEventListener('click', loadPreviousVideo);
-        document.getElementById('downBtn').addEventListener('click', loadNextVideo);
-        document.getElementById('play-pause-btn').addEventListener('click', togglePlayPause);
-        document.getElementById('mute-unmute-btn').addEventListener('click', toggleMute);
+        document.getElementById('upBtn').addEventListener('click', loadPreviousVideo);
+        document.getElementById('downBtn').addEventListener('click', loadNextVideo);
+        document.getElementById('play-pause-btn').addEventListener('click', togglePlayPause);
+        document.getElementById('mute-unmute-btn').addEventListener('click', toggleMute);
 
-        // --- Thumbnail Click Handlers ---
-        thumbnailWrapper.addEventListener('click', (e) => {
-            // If the close button was clicked, stop.
-            if (e.target.id === 'close-thumbnail-btn') {
-                e.stopPropagation();
-                return;
-            }
-            
-            // Otherwise, click opens the buy now link
-            if (currentBuyNowUrl && currentBuyNowUrl !== '#') {
-                window.open(currentBuyNowUrl, '_blank');
-            }
-        });
-        
-        document.getElementById('close-thumbnail-btn').addEventListener('click', () => {
-            thumbnailWrapper.classList.add('hidden');
-        });
-    });
+        // --- Thumbnail Click Handlers ---
+        thumbnailWrapper.addEventListener('click', (e) => {
+            // If the close button was clicked, stop.
+            if (e.target.id === 'close-thumbnail-btn') {
+                e.stopPropagation();
+                return;
+            }
+            
+            // Otherwise, click opens the buy now link
+            if (currentBuyNowUrl && currentBuyNowUrl !== '#') {
+                window.open(currentBuyNowUrl, '_blank');
+            }
+        });
+        
+        document.getElementById('close-thumbnail-btn').addEventListener('click', () => {
+            thumbnailWrapper.classList.add('hidden');
+        });
+    });
 </script>
 
 </body>
 </html>
+
