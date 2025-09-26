@@ -18,16 +18,18 @@
         }
         
         /* General Body Styling */
-        body {
+        html, body {
             margin: 0;
+            padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: #000;
             color: white;
             overflow: hidden;
+            width: 100vw;
             height: 100vh;
         }
 
-        /* Swiper container to capture touch/mouse events */
+        /* Swiper container - Always fills the viewport */
         .swiper-container {
             position: relative;
             width: 100%;
@@ -38,26 +40,56 @@
             touch-action: var(--touch-action);
         }
 
-        /* Player wrapper for sizing and centering */
+        /* Player wrapper - Primary size control for portrait mode */
         .player-wrapper {
             width: 100%;
-            max-width: 450px;
+            max-width: 450px; 
             height: 100%;
             display: flex;
             align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
         }
 
-        /* The actual player div that YouTube API will replace */
+        /* The actual player div (16:9 aspect ratio in portrait) */
         #player {
             width: 100%;
-            aspect-ratio: 9 / 16;
+            aspect-ratio: 9 / 16; /* Vertical Aspect Ratio */
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            transition: opacity 0.3s ease-in-out;
+            transition: all 0.3s ease-in-out;
             pointer-events: none; 
         }
 
+        /* --- LANDSCAPE MODE ADJUSTMENTS (Fullscreen) --- */
+        @media screen and (orientation: landscape) {
+            .player-wrapper {
+                /* Fill the entire screen horizontally */
+                max-width: 100vw; 
+                height: 100vh;
+                margin: 0;
+            }
+            #player {
+                /* Set to horizontal aspect ratio */
+                aspect-ratio: 16 / 9; 
+                width: 100%;
+                height: 100%; 
+                max-width: 100%;
+                max-height: 100%;
+                border-radius: 0; /* Remove rounded corners for full screen */
+            }
+            /* Adjust bottom bar for landscape (smaller and less intrusive) */
+            .bottom-bar {
+                padding: 10px 20px 10px 20px;
+                gap: 10px;
+            }
+            .bottom-bar a, .bottom-bar button {
+                padding: 10px 15px; /* Smaller buttons */
+                font-size: 14px;
+            }
+        }
+        
         #player.loading {
             opacity: 0;
         }
@@ -70,6 +102,7 @@
             transform: translateX(-50%);
             width: calc(100% - 40px);
             max-width: 400px;
+            /* ... (rest of thumbnail styles) ... */
             display: flex;
             align-items: center;
             padding: 10px;
@@ -124,7 +157,7 @@
             opacity: 1;
         }
 
-        /* Fixed Bottom Bar Styling */
+        /* Fixed Bottom Bar Styling (Portrait default) */
         .bottom-bar {
             position: fixed;
             bottom: 0;
@@ -138,6 +171,7 @@
             gap: 15px;
             box-sizing: border-box;
             z-index: 10;
+            transition: padding 0.3s ease, gap 0.3s ease;
         }
 
         /* General Button Styling */
@@ -151,7 +185,7 @@
             cursor: pointer;
             flex-grow: 1;
             text-align: center;
-            transition: background-color 0.2s, transform 0.1s;
+            transition: all 0.3s ease;
         }
 
         .buy-now-btn {
@@ -259,7 +293,6 @@
         let thumbnailTimeout; 
         
         const thumbnailWrapper = document.getElementById('thumbnail-wrapper');
-        const buyNowThumbnail = document.getElementById('buy-now-thumbnail');
         const playPauseBtn = document.getElementById('play-pause-btn');
         const muteUnmuteBtn = document.getElementById('mute-unmute-btn'); 
 
@@ -295,31 +328,29 @@
             
             ogUrl.content = shareUrl;
 
-            // Ensure the page title also matches
             document.title = videoData.title;
         }
         
-        // --- NEW: Function to share with thumbnail image as a file (Web Share API Level 2) ---
+        // --- Function to share with thumbnail image as a file (Web Share API Level 2) ---
         async function shareWithThumbnail(videoTitle, videoUrl, thumbnailUrl) {
             
-            // 1. Update OG Tags immediately so crawlers pick them up on the shared page
             const currentVideo = videos[currentVideoIndex];
-            updateOGTags(currentVideo, videoUrl);
+            updateOGTags(currentVideo, videoUrl); // Update OG Tags for crawlers
 
             try {
                 // Fetch the thumbnail image as a Blob
                 const response = await fetch(thumbnailUrl);
                 const blob = await response.blob();
                 
-                // Create a File object from the Blob (required for sharing files)
+                // Create a File object
                 const file = new File([blob], "thumbnail.jpg", { type: blob.type });
 
                 // Prepare the share data with files
                 const shareData = {
-                    title: `Check out this video: ${videoTitle}`,
-                    text: `Watch this video: ${videoTitle}`,
+                    title: videoTitle, 
+                    text: `${videoTitle}\n${videoUrl}`, // Newline separation
                     url: videoUrl,
-                    files: [file] // Include the thumbnail image file
+                    files: [file]
                 };
 
                 // Check if the system can share the files (Web Share API Level 2)
@@ -340,8 +371,9 @@
                 console.error("Error sharing with thumbnail:", error);
                 
                 // Final Fallback: Copy link to clipboard
-                await navigator.clipboard.writeText(videoUrl); 
-                alert('Share failed. Link copied to clipboard!'); 
+                const fallbackText = `${videoTitle}\n${videoUrl}`;
+                await navigator.clipboard.writeText(fallbackText); 
+                alert(`Share failed. Link copied to clipboard:\n${fallbackText}`); 
             }
         }
         // ----------------------------------------------------------------------------------
@@ -354,10 +386,10 @@
             player = new YT.Player('player', {
                 height: '100%',
                 width: '100%',
-                videoId: videos[currentVideoIndex].videoId, // Start with the determined video
+                videoId: videos[currentVideoIndex].videoId, 
                 playerVars: {
                     'playsinline': 1, 
-                    'autoplay': 1, // Crucial for automatic play when the page loads
+                    'autoplay': 1, 
                     'controls': 0, 
                     'loop': 0, 
                     'modestbranding': 1, 
@@ -375,11 +407,7 @@
         // --- Core Player Functions ---
 
         function onPlayerReady(event) {
-            // Load the *first* video based on the resolved index (from URL or default 0)
             loadVideoByIndex(currentVideoIndex); 
-            
-            // Fix: Start playing immediately to ensure auto-play works. 
-            // This is especially important for the video loaded via the shared link.
             event.target.playVideo(); 
         }
 
@@ -387,20 +415,16 @@
             const state = event.data;
             if (state === YT.PlayerState.PLAYING) {
                 playPauseBtn.textContent = '❚❚'; 
-                playPauseBtn.setAttribute('aria-label', 'Pause video');
             } else if (state === YT.PlayerState.PAUSED || state === YT.PlayerState.BUFFERING) {
                 playPauseBtn.textContent = '▶'; 
-                playPauseBtn.setAttribute('aria-label', 'Play video');
             } else if (state === YT.PlayerState.ENDED) {
                 loadNextVideo();
             }
         }
 
         function onPlayerError(event) {
-            console.error("YouTube Player Error:", event.data);
             const unavailableErrorCodes = [2, 100, 101, 150];
             if (unavailableErrorCodes.includes(event.data)) {
-                console.log("Video is unavailable. Loading next video automatically.");
                 loadNextVideo();
             }
         }
@@ -416,8 +440,8 @@
             
             currentBuyNowUrl = video.buyNowUrl; 
 
-            // --- Set Thumbnail Image & Control Visibility ---
-            buyNowThumbnail.src = video.productThumbnailUrl || `https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`;
+            // Update product thumbnail
+            document.getElementById('buy-now-thumbnail').src = video.productThumbnailUrl || `https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`;
             
             thumbnailWrapper.classList.add('hidden'); 
 
@@ -428,11 +452,9 @@
             if (isMuted) {
                 player.mute();
                 muteUnmuteBtn.textContent = '🔇';
-                muteUnmuteBtn.setAttribute('aria-label', 'Unmute video');
             } else {
                 player.unMute(); 
                 muteUnmuteBtn.textContent = '🔊';
-                muteUnmuteBtn.setAttribute('aria-label', 'Mute video');
             }
             
             setTimeout(() => {
@@ -458,7 +480,7 @@
             const prevIndex = (currentVideoIndex - 1 + videos.length) % videos.length;
             loadVideoByIndex(prevIndex);
         }
-
+        
         function togglePlayPause() {
             if (player.getPlayerState() === YT.PlayerState.PLAYING) {
                 player.pauseVideo();
@@ -472,20 +494,33 @@
                 player.unMute();
                 isMuted = false;
                 muteUnmuteBtn.textContent = '🔊'; 
-                muteUnmuteBtn.setAttribute('aria-label', 'Mute video');
             } else {
                 player.mute();
                 isMuted = true;
                 muteUnmuteBtn.textContent = '🔇'; 
-                muteUnmuteBtn.setAttribute('aria-label', 'Mute video');
             }
         }
 
+        // --- Rotation Logic ---
+        function checkOrientation() {
+            const playerWrapper = document.querySelector('.player-wrapper');
+            const isLandscape = window.matchMedia("(orientation: landscape)").matches;
+            
+            // No need to manually add/remove classes, the CSS media queries handle the styling/sizing.
+            
+            // Optional: If you wanted to force true fullscreen, you would use:
+            // if (isLandscape && !document.fullscreenElement) { playerWrapper.requestFullscreen(); }
+            // else if (!isLandscape && document.fullscreenElement) { document.exitFullscreen(); }
+        }
 
         // --- Event Listener Setup ---
         
         document.addEventListener('DOMContentLoaded', () => {
             
+            // Check orientation on load and on change
+            checkOrientation();
+            window.addEventListener('orientationchange', checkOrientation);
+
             const swiper = document.getElementById('swiper-container');
             
             // --- Swipe Up/Down Logic ---
@@ -504,25 +539,22 @@
                 }
             }
 
-            // Bind touch/mouse events for swiping
             swiper.addEventListener('touchstart', e => { touchStartY = e.changedTouches[0].screenY; }, { passive: true });
             swiper.addEventListener('touchend', e => { touchEndY = e.changedTouches[0].screenY; handleSwipe(); }, { passive: true });
             swiper.addEventListener('mousedown', e => { touchStartY = e.screenY; });
             swiper.addEventListener('mouseup', e => { touchEndY = e.screenY; handleSwipe(); });
 
 
-            // --- Share Button Logic (Calling the new async function) ---
+            // --- Share Button Logic (Calling the async function) ---
             document.getElementById('share-btn').addEventListener('click', async () => {
                 const currentVideo = videos[currentVideoIndex];
                 
-                // 1. Construct the share URL with the current video ID
                 const shareUrl = `${window.location.origin}${window.location.pathname}?v=${currentVideo.videoId}`; 
-                
-                // 2. Define the thumbnail URL (High Quality YouTube Thumbnail)
                 const thumbnailUrl = `https://img.youtube.com/vi/${currentVideo.videoId}/hqdefault.jpg`;
+                const videoTitle = `Check out this video: ${currentVideo.title}`; // Title format
 
-                // 3. Execute the advanced share function
-                await shareWithThumbnail(currentVideo.title, shareUrl, thumbnailUrl);
+                // Execute the advanced share function
+                await shareWithThumbnail(videoTitle, shareUrl, thumbnailUrl);
             });
 
             // --- Navigation and Controls ---
