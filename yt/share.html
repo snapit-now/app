@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Interactive Video Swiper</title>
 
-    <meta property="og:title" content="Interactive Video Viewer">
+    <meta property="og:title" id="og-title" content="Interactive Video Viewer">
     <meta property="og:description" content="Check out this immersive video experience!">
     <meta property="og:image" id="og-image" content="">
     <meta property="og:url" id="og-url" content="">
@@ -160,7 +160,6 @@
         }
 
         .share-btn {
-            /* 80% transparent */
             background-color: rgba(255, 255, 255, 0.2);
             color: white;
         }
@@ -179,7 +178,6 @@
         
         /* Nav buttons style applied to all buttons in the nav-buttons container */
         #nav-buttons button {
-            /* 80% transparent (0.2 opacity) */
             background: rgba(255,255,255,0.2); 
             border: none;
             color: #fff;
@@ -221,8 +219,6 @@
         <button id="play-pause-btn" aria-label="Pause video">❚❚</button>
         <button id="mute-unmute-btn" aria-label="Mute video">🔊</button>
         <button id="website" aria-label="More Links (Linktree)" onclick="window.open('https://linktr.ee/snapit.now', '_blank')">🌐</button>
-
-
     </div>
 
     <div class="bottom-bar">
@@ -283,13 +279,10 @@
         }
 
         /**
-         * UPDATED: Updates the Open Graph (OG) meta tags for social sharing.
-         * Sets og:title to a custom text + video title.
-         * @param {object} videoData - The data object for the current video.
-         * @param {string} shareUrl - The full URL to be shared.
+         * Updates the Open Graph (OG) meta tags for social sharing fallback.
          */
         function updateOGTags(videoData, shareUrl) {
-            const ogTitle = document.querySelector('meta[property="og:title"]');
+            const ogTitle = document.getElementById('og-title');
             const ogImage = document.getElementById('og-image');
             const ogUrl = document.getElementById('og-url');
 
@@ -305,6 +298,53 @@
             // Ensure the page title also matches
             document.title = videoData.title;
         }
+        
+        // --- NEW: Function to share with thumbnail image as a file (Web Share API Level 2) ---
+        async function shareWithThumbnail(videoTitle, videoUrl, thumbnailUrl) {
+            
+            // 1. Update OG Tags immediately so crawlers pick them up on the shared page
+            const currentVideo = videos[currentVideoIndex];
+            updateOGTags(currentVideo, videoUrl);
+
+            try {
+                // Fetch the thumbnail image as a Blob
+                const response = await fetch(thumbnailUrl);
+                const blob = await response.blob();
+                
+                // Create a File object from the Blob (required for sharing files)
+                const file = new File([blob], "thumbnail.jpg", { type: blob.type });
+
+                // Prepare the share data with files
+                const shareData = {
+                    title: `Check out this video: ${videoTitle}`,
+                    text: `Watch this video: ${videoTitle}`,
+                    url: videoUrl,
+                    files: [file] // Include the thumbnail image file
+                };
+
+                // Check if the system can share the files (Web Share API Level 2)
+                if (navigator.canShare && navigator.canShare({ files: shareData.files })) {
+                    await navigator.share(shareData);
+                    console.log("Shared successfully with thumbnail!");
+                } else {
+                    console.warn("Sharing files not supported. Falling back to simple link share.");
+                    
+                    // Fallback to simple link share (Web Share API Level 1)
+                    await navigator.share({
+                        title: shareData.title,
+                        text: shareData.text,
+                        url: shareData.url
+                    });
+                }
+            } catch (error) {
+                console.error("Error sharing with thumbnail:", error);
+                
+                // Final Fallback: Copy link to clipboard
+                await navigator.clipboard.writeText(videoUrl); 
+                alert('Share failed. Link copied to clipboard!'); 
+            }
+        }
+        // ----------------------------------------------------------------------------------
 
 
         function onYouTubeIframeAPIReady() {
@@ -338,8 +378,8 @@
             // Load the *first* video based on the resolved index (from URL or default 0)
             loadVideoByIndex(currentVideoIndex); 
             
-            // Start playing immediately. This is the fix for default auto-play.
-            // Note: Mobile browsers might still block autoplay if the user hasn't interacted with the page.
+            // Fix: Start playing immediately to ensure auto-play works. 
+            // This is especially important for the video loaded via the shared link.
             event.target.playVideo(); 
         }
 
@@ -379,15 +419,12 @@
             // --- Set Thumbnail Image & Control Visibility ---
             buyNowThumbnail.src = video.productThumbnailUrl || `https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`;
             
-            // Hide thumbnail immediately when a new video loads
             thumbnailWrapper.classList.add('hidden'); 
 
-            // Clear any previous timeout
             if (thumbnailTimeout) clearTimeout(thumbnailTimeout);
 
             player.loadVideoById(video.videoId);
             
-            // Audio Logic...
             if (isMuted) {
                 player.mute();
                 muteUnmuteBtn.textContent = '🔇';
@@ -435,7 +472,7 @@
                 player.unMute();
                 isMuted = false;
                 muteUnmuteBtn.textContent = '🔊'; 
-                muteUnmuteBtn.setAttribute('aria-label', 'Unmute video');
+                muteUnmuteBtn.setAttribute('aria-label', 'Mute video');
             } else {
                 player.mute();
                 isMuted = true;
@@ -474,34 +511,18 @@
             swiper.addEventListener('mouseup', e => { touchEndY = e.screenY; handleSwipe(); });
 
 
-            // --- Share Button Logic (Updated) ---
+            // --- Share Button Logic (Calling the new async function) ---
             document.getElementById('share-btn').addEventListener('click', async () => {
                 const currentVideo = videos[currentVideoIndex];
                 
                 // 1. Construct the share URL with the current video ID
                 const shareUrl = `${window.location.origin}${window.location.pathname}?v=${currentVideo.videoId}`; 
                 
-                // 2. Update Open Graph tags just before sharing
-                updateOGTags(currentVideo, shareUrl);
+                // 2. Define the thumbnail URL (High Quality YouTube Thumbnail)
+                const thumbnailUrl = `https://img.youtube.com/vi/${currentVideo.videoId}/hqdefault.jpg`;
 
-                const shareData = { 
-                    title: `Check out this video: ${currentVideo.title}`, // Also update native share title
-                    text: `Check out this short video!` ${currentVideo.title}, 
-                    url: shareUrl 
-                };
-
-                try {
-                    // Use native sharing if available
-                    if (navigator.share) await navigator.share(shareData);
-                    else { 
-                        // Fallback: Copy link to clipboard
-                        await navigator.clipboard.writeText(shareUrl); 
-                        alert('Link copied to clipboard!'); 
-                    }
-                } catch (err) {
-                    console.error('Error sharing:', err);
-                    alert(`Could not share. Copy this link: ${shareUrl}`);
-                }
+                // 3. Execute the advanced share function
+                await shareWithThumbnail(currentVideo.title, shareUrl, thumbnailUrl);
             });
 
             // --- Navigation and Controls ---
