@@ -21,9 +21,9 @@
         body {
             margin: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #000; /* Black background for immersive feel */
+            background-color: #000;
             color: white;
-            overflow: hidden; /* Hide all scrollbars */
+            overflow: hidden;
             height: 100vh;
         }
 
@@ -35,13 +35,13 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            touch-action: var(--touch-action); /* Apply touch-action from variable */
+            touch-action: var(--touch-action);
         }
 
         /* Player wrapper for sizing and centering */
         .player-wrapper {
             width: 100%;
-            max-width: 450px; /* Max width for vertical video players */
+            max-width: 450px;
             height: 100%;
             display: flex;
             align-items: center;
@@ -54,22 +54,22 @@
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            transition: opacity 0.3s ease-in-out; /* For smooth video transitions */
-            pointer-events: none; /* Keep clicks disabled on the video */
+            transition: opacity 0.3s ease-in-out;
+            pointer-events: none; 
         }
 
         #player.loading {
-            opacity: 0; /* Hide the player briefly while a new video loads */
+            opacity: 0;
         }
 
         /* --- THUMBNAIL WRAPPER STYLING --- */
         .thumbnail-wrapper {
             position: fixed;
-            bottom: 120px; /* Position above the bottom bar */
+            bottom: 120px;
             left: 50%;
             transform: translateX(-50%);
             width: calc(100% - 40px);
-            max-width: 400px; /* Max width slightly less than player */
+            max-width: 400px;
             display: flex;
             align-items: center;
             padding: 10px;
@@ -80,7 +80,7 @@
             transition: transform 0.3s ease, opacity 0.3s ease;
             opacity: 1;
             z-index: 9;
-            cursor: pointer; /* Makes it visually clear it's clickable */
+            cursor: pointer;
         }
         .thumbnail-wrapper.hidden {
             opacity: 0;
@@ -118,7 +118,7 @@
             line-height: 1;
             opacity: 0.6;
             transition: opacity 0.2s;
-            z-index: 1; /* Ensure close button is clickable */
+            z-index: 1;
         }
         #close-thumbnail-btn:hover {
             opacity: 1;
@@ -283,8 +283,8 @@
         }
 
         /**
-         * UPDATED: Updates the Open Graph (OG) meta tags in the document head for social sharing.
-         * The title comes from the local array, and the image is generated from the YouTube ID.
+         * UPDATED: Updates the Open Graph (OG) meta tags for social sharing.
+         * Sets og:title to a custom text + video title.
          * @param {object} videoData - The data object for the current video.
          * @param {string} shareUrl - The full URL to be shared.
          */
@@ -293,8 +293,8 @@
             const ogImage = document.getElementById('og-image');
             const ogUrl = document.getElementById('og-url');
 
-            // 1. OG Title: Use title from local array (acting as generated YouTube data)
-            ogTitle.content = `Watch: ${videoData.title}`; 
+            // 1. OG Title: Custom text + video title
+            ogTitle.content = `Check out this video: ${videoData.title}`; 
             
             // 2. OG Image: Use the reliable YouTube High-Quality thumbnail URL pattern
             const youtubeThumbnailUrl = `https://img.youtube.com/vi/${videoData.videoId}/hqdefault.jpg`;
@@ -308,7 +308,7 @@
 
 
         function onYouTubeIframeAPIReady() {
-            // New logic: Determine the starting video before player initialization
+            // Determine the starting video before player initialization
             checkURLForVideoId(); 
             
             player = new YT.Player('player', {
@@ -316,7 +316,8 @@
                 width: '100%',
                 videoId: videos[currentVideoIndex].videoId, // Start with the determined video
                 playerVars: {
-                    'playsinline': 1, 'autoplay': 1, 
+                    'playsinline': 1, 
+                    'autoplay': 1, // Crucial for automatic play when the page loads
                     'controls': 0, 
                     'loop': 0, 
                     'modestbranding': 1, 
@@ -336,6 +337,10 @@
         function onPlayerReady(event) {
             // Load the *first* video based on the resolved index (from URL or default 0)
             loadVideoByIndex(currentVideoIndex); 
+            
+            // Start playing immediately. This is the fix for default auto-play.
+            // Note: Mobile browsers might still block autoplay if the user hasn't interacted with the page.
+            event.target.playVideo(); 
         }
 
         function onPlayerStateChange(event) {
@@ -430,12 +435,12 @@
                 player.unMute();
                 isMuted = false;
                 muteUnmuteBtn.textContent = '🔊'; 
-                muteUnmuteBtn.setAttribute('aria-label', 'Mute video');
+                muteUnmuteBtn.setAttribute('aria-label', 'Unmute video');
             } else {
                 player.mute();
                 isMuted = true;
                 muteUnmuteBtn.textContent = '🔇'; 
-                muteUnmuteBtn.setAttribute('aria-label', 'Unmute video');
+                muteUnmuteBtn.setAttribute('aria-label', 'Mute video');
             }
         }
 
@@ -469,19 +474,19 @@
             swiper.addEventListener('mouseup', e => { touchEndY = e.screenY; handleSwipe(); });
 
 
-            // --- Share Button Logic (Updated for OG Tags) ---
+            // --- Share Button Logic (Updated) ---
             document.getElementById('share-btn').addEventListener('click', async () => {
                 const currentVideo = videos[currentVideoIndex];
                 
                 // 1. Construct the share URL with the current video ID
                 const shareUrl = `${window.location.origin}${window.location.pathname}?v=${currentVideo.videoId}`; 
                 
-                // 2. Update Open Graph tags just before sharing (Handles OG image/title generation)
+                // 2. Update Open Graph tags just before sharing
                 updateOGTags(currentVideo, shareUrl);
 
                 const shareData = { 
-                    title: `Watch: ${currentVideo.title}`, 
-                    text: `Check out this short video!`, 
+                    title: `Check out this video: ${currentVideo.title}`, // Also update native share title
+                    text: `Check out this short video!` ${currentVideo.title}, 
                     url: shareUrl 
                 };
 
