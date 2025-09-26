@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Interactive Video Swiper</title>
+
+    <meta property="og:title" content="Interactive Video Viewer">
+    <meta property="og:description" content="Check out this immersive video experience!">
+    <meta property="og:image" id="og-image" content="">
+    <meta property="og:url" id="og-url" content="">
+    <meta property="og:type" content="video.other">
+
     <style>
         :root {
             --touch-action: none; /* Disables pull-to-refresh on mobile */
@@ -170,7 +177,8 @@
         
         /* Nav buttons style applied to all buttons in the nav-buttons container */
         #nav-buttons button {
-            background: rgba(255,255,255,0.25);
+            /* 80% transparent */
+            background: rgba(255,255,255,0.2); 
             border: none;
             color: #fff;
             font-weight: bold;
@@ -247,19 +255,67 @@
         // ------------------------------------
 
         let player;
-        let currentVideoIndex = 0;
-        let isMuted = false; // Default state is UNMUTED
+        // MODIFIED: currentVideoIndex is now set by checkURLForVideoId
+        let currentVideoIndex = 0; 
+        let isMuted = false; 
         let currentBuyNowUrl = '#'; 
+        let thumbnailTimeout; 
         
         const thumbnailWrapper = document.getElementById('thumbnail-wrapper');
         const buyNowThumbnail = document.getElementById('buy-now-thumbnail');
         const playPauseBtn = document.getElementById('play-pause-btn');
         const muteUnmuteBtn = document.getElementById('mute-unmute-btn'); 
 
+        /**
+         * Checks the URL for a 'v' parameter and updates the starting index.
+         */
+        function checkURLForVideoId() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const videoIdFromUrl = urlParams.get('v');
+
+            if (videoIdFromUrl) {
+                const index = videos.findIndex(v => v.videoId === videoIdFromUrl);
+                if (index !== -1) {
+                    currentVideoIndex = index;
+                }
+            }
+        }
+
+        /**
+         * Updates the Open Graph (OG) meta tags in the document head for social sharing.
+         * @param {object} videoData - The data object for the current video.
+         * @param {string} shareUrl - The full URL to be shared.
+         */
+        function updateOGTags(videoData, shareUrl) {
+            const ogTitle = document.querySelector('meta[property="og:title"]');
+            const ogImage = document.getElementById('og-image');
+            const ogUrl = document.getElementById('og-url');
+
+            // Set the dynamic content
+            ogTitle.content = videoData.title;
+            // Prioritize the product thumbnail, otherwise use a high-quality YouTube thumbnail
+            ogImage.content = videoData.productThumbnailUrl || `https://img.youtube.com/vi/${videoData.videoId}/hqdefault.jpg`;
+            ogUrl.content = shareUrl;
+
+            // Optional: for Twitter
+            const twitterCard = document.querySelector('meta[name="twitter:card"]');
+            if (!twitterCard) {
+                const newTag = document.createElement('meta');
+                newTag.name = "twitter:card";
+                newTag.content = "summary_large_image";
+                document.head.appendChild(newTag);
+            }
+        }
+
+
         function onYouTubeIframeAPIReady() {
+            // New logic: Determine the starting video before player initialization
+            checkURLForVideoId(); 
+            
             player = new YT.Player('player', {
                 height: '100%',
                 width: '100%',
+                videoId: videos[currentVideoIndex].videoId, // Start with the determined video
                 playerVars: {
                     'playsinline': 1, 'autoplay': 1, 
                     'controls': 0, 
@@ -279,7 +335,8 @@
         // --- Core Player Functions ---
 
         function onPlayerReady(event) {
-            loadVideoByIndex(currentVideoIndex);
+            // Load the *first* video based on the resolved index (from URL or default 0)
+            loadVideoByIndex(currentVideoIndex); 
         }
 
         function onPlayerStateChange(event) {
@@ -315,9 +372,13 @@
             
             currentBuyNowUrl = video.buyNowUrl; 
 
-            // --- Set Thumbnail Image (Uses productThumbnailUrl first) ---
+            // --- Set Thumbnail Image & Control Visibility ---
             buyNowThumbnail.src = video.productThumbnailUrl || `https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`;
-            thumbnailWrapper.classList.remove('hidden');
+            
+            thumbnailWrapper.classList.add('hidden'); 
+
+            // Clear any previous timeout
+            if (thumbnailTimeout) clearTimeout(thumbnailTimeout);
 
             player.loadVideoById(video.videoId);
             
@@ -335,6 +396,12 @@
             setTimeout(() => {
                 player.playVideo();
                 playerElement.classList.remove('loading');
+                
+                // Show thumbnail after 5 seconds
+                thumbnailTimeout = setTimeout(() => {
+                    thumbnailWrapper.classList.remove('hidden');
+                }, 5000); 
+
             }, 500);
 
             document.getElementById('buy-now-link').href = video.buyNowUrl;
@@ -379,7 +446,7 @@
             
             const swiper = document.getElementById('swiper-container');
             
-            // --- NEW FEATURE: Tap anywhere on the screen to Play/Pause ---
+            // --- Tap anywhere on the screen to Play/Pause ---
             swiper.addEventListener('click', () => {
                 togglePlayPause();
             });
@@ -400,20 +467,34 @@
                 }
             }
 
-            // Note: The click listener above handles simple taps.
             swiper.addEventListener('touchstart', e => { touchStartY = e.changedTouches[0].screenY; }, { passive: true });
             swiper.addEventListener('touchend', e => { touchEndY = e.changedTouches[0].screenY; handleSwipe(); }, { passive: true });
             swiper.addEventListener('mousedown', e => { touchStartY = e.screenY; });
             swiper.addEventListener('mouseup', e => { touchEndY = e.screenY; handleSwipe(); });
 
-            // --- Share Button Logic ---
+            // --- Share Button Logic (UPDATED to include OG tag update) ---
             document.getElementById('share-btn').addEventListener('click', async () => {
                 const currentVideo = videos[currentVideoIndex];
-                const shareUrl = `${window.location.origin}${window.location.pathname}?v=${currentVideo.videoId}`;
-                const shareData = { title: 'Check out this video!', text: currentVideo.title, url: shareUrl };
+                
+                // Construct the share URL with the current video ID
+                const shareUrl = `${window.location.origin}${window.location.pathname}?v=${currentVideo.videoId}`; 
+                
+                // IMPORTANT: Update Open Graph tags just before sharing
+                updateOGTags(currentVideo, shareUrl);
+
+                const shareData = { 
+                    title: `Watch: ${currentVideo.title}`, 
+                    text: `Check out this short video!`, 
+                    url: shareUrl 
+                };
+
                 try {
                     if (navigator.share) await navigator.share(shareData);
-                    else { await navigator.clipboard.writeText(shareUrl); alert('Link copied to clipboard!'); }
+                    else { 
+                        // Fallback: Copy link to clipboard
+                        await navigator.clipboard.writeText(shareUrl); 
+                        alert('Link copied to clipboard!'); 
+                    }
                 } catch (err) {
                     console.error('Error sharing:', err);
                     alert(`Could not share. Copy this link: ${shareUrl}`);
@@ -424,7 +505,6 @@
             document.getElementById('upBtn').addEventListener('click', loadPreviousVideo);
             document.getElementById('downBtn').addEventListener('click', loadNextVideo);
             
-            // The side button still works, although the main screen tap now also calls togglePlayPause
             document.getElementById('play-pause-btn').addEventListener('click', togglePlayPause);
             document.getElementById('mute-unmute-btn').addEventListener('click', toggleMute);
 
