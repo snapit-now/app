@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Interactive Video Swiper</title>
 
+    <!-- Base Open Graph Meta Tags (REQUIRED for sharing thumbnail/title) -->
     <meta property="og:title" id="og-title" content="Interactive Video Viewer">
     <meta property="og:description" content="Check out this immersive video experience!">
     <meta property="og:image" id="og-image" content="">
@@ -24,7 +25,8 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: #000;
             color: white;
-            overflow: hidden;
+            /* Hide overflow to prevent scroll bars when the viewport is full */
+            overflow: hidden; 
             width: 100vw;
             height: 100vh;
         }
@@ -66,7 +68,12 @@
             opacity: 0;
         }
 
-        /* --- Fullscreen API Styling (Applies when element is in native fullscreen) --- */
+        /* --- Fullscreen API Styling (Applies when the page or element is in native fullscreen) --- */
+        /* Targets the <html> element when in fullscreen mode */
+        html:fullscreen,
+        html:-webkit-full-screen,
+        html:-moz-full-screen,
+        html:-ms-fullscreen,
         .player-wrapper:fullscreen,
         .player-wrapper:-webkit-full-screen,
         .player-wrapper:-moz-full-screen,
@@ -333,7 +340,6 @@
             const ogImage = document.getElementById('og-image');
             const ogUrl = document.getElementById('og-url');
 
-            // Use the video title for the OG title
             ogTitle.content = `Watch: ${videoData.title}`; 
             
             const youtubeThumbnailUrl = `https://img.youtube.com/vi/${videoData.videoId}/hqdefault.jpg`;
@@ -348,10 +354,13 @@
 
         /**
          * Cross-browser function to request native fullscreen.
+         * @param {HTMLElement} element 
          */
         function requestFullscreen(element) {
             if (element.requestFullscreen) {
-                element.requestFullscreen();
+                element.requestFullscreen().catch(err => {
+                    // console.error("Fullscreen request failed:", err);
+                });
             } else if (element.mozRequestFullScreen) { // Firefox
                 element.mozRequestFullScreen();
             } else if (element.webkitRequestFullscreen) { // Chrome, Safari and Opera
@@ -366,7 +375,9 @@
          */
         function exitFullscreen() {
             if (document.exitFullscreen) {
-                document.exitFullscreen();
+                document.exitFullscreen().catch(err => {
+                    // console.error("Exit fullscreen failed:", err);
+                });
             } else if (document.mozCancelFullScreen) { // Firefox
                 document.mozCancelFullScreen();
             } else if (document.webkitExitFullscreen) { // Chrome, Safari and Opera
@@ -378,22 +389,23 @@
 
         /**
          * Checks device orientation and triggers native fullscreen accordingly.
+         * This targets the playerWrapper to ensure the video scales correctly inside fullscreen.
          */
         function checkOrientation() {
             const isLandscape = window.matchMedia("(orientation: landscape)").matches;
             
             if (isLandscape) {
-                // When in landscape, automatically request native fullscreen
+                // When in landscape, automatically request native fullscreen on the player wrapper
                 requestFullscreen(playerWrapper);
             } else {
-                // When returning to portrait, exit native fullscreen if active
-                if (document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement) {
+                // When returning to portrait, exit native fullscreen if active on player wrapper
+                if (document.fullscreenElement === playerWrapper || document.webkitFullscreenElement === playerWrapper || document.mozFullScreenElement === playerWrapper || document.msFullscreenElement === playerWrapper) {
                     exitFullscreen();
                 }
             }
         }
 
-        // --- Share Function (FIXED: Simplified title/text for better compatibility) ---
+        // --- Share Function ---
         async function shareWithThumbnail(videoTitle, videoUrl, thumbnailUrl) {
             
             const currentVideo = videos[currentVideoIndex];
@@ -404,10 +416,10 @@
                 const blob = await response.blob();
                 const file = new File([blob], "thumbnail.jpg", { type: blob.type });
                 
-                // FIXED: Using a concise title and placing the full message/link in 'text'
+                // Using a concise title and placing the full message/link in 'text'
                 const shareData = {
-                    title: "Watch this video", // Concise title
-                    text: `${videoTitle}\n${videoUrl}`, // Title and link separated by newline
+                    title: "Watch this video", // Concise title for native share dialog
+                    text: `Check out: ${videoTitle}\n${videoUrl}`, // Title and link separated by newline
                     url: videoUrl,
                     files: [file]
                 };
@@ -426,8 +438,15 @@
                 console.error("Error sharing:", error);
                 
                 // Final Fallback: Copy link to clipboard
-                const fallbackText = `${videoTitle}\n${videoUrl}`;
-                await navigator.clipboard.writeText(fallbackText); 
+                const fallbackText = `Check out: ${videoTitle}\n${videoUrl}`;
+                // Using document.execCommand('copy') for better iframe compatibility
+                const tempInput = document.createElement('textarea');
+                tempInput.value = fallbackText;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                
                 alert(`Share failed. Link copied to clipboard:\n${fallbackText}`); 
             }
         }
@@ -458,7 +477,7 @@
             });
         }
         
-        // --- Core Player Functions (Unchanged) ---
+        // --- Core Player Functions ---
 
         function onPlayerReady(event) {
             loadVideoByIndex(currentVideoIndex); 
@@ -558,12 +577,19 @@
         
         document.addEventListener('DOMContentLoaded', () => {
             
-            // Check orientation on load and on change
+            // 1. ATTEMPT FULLSCREEN ON PAGE LOAD (for the whole page)
+            // This is requested by the user. Note that many browsers will block this
+            // unless triggered by a direct user gesture (like a button click).
+            setTimeout(() => {
+                requestFullscreen(document.documentElement);
+            }, 1000); 
+
+            // 2. Add listeners for rotation (which also triggers fullscreen on landscape)
             window.addEventListener('orientationchange', checkOrientation);
 
             const swiper = document.getElementById('swiper-container');
             
-            // --- Swipe Up/Down Logic (Unchanged) ---
+            // --- Swipe Up/Down Logic ---
             let touchStartY = 0;
             let touchEndY = 0;
             const swipeThreshold = 50; 
@@ -591,20 +617,19 @@
                 
                 const shareUrl = `${window.location.origin}${window.location.pathname}?v=${currentVideo.videoId}`; 
                 const thumbnailUrl = `https://img.youtube.com/vi/${currentVideo.videoId}/hqdefault.jpg`;
-                // Use the plain video title
                 const videoTitle = currentVideo.title; 
 
                 await shareWithThumbnail(videoTitle, shareUrl, thumbnailUrl);
             });
 
-            // --- Navigation and Controls (Unchanged) ---
+            // --- Navigation and Controls ---
             swiper.addEventListener('click', togglePlayPause);
             document.getElementById('upBtn').addEventListener('click', loadPreviousVideo);
             document.getElementById('downBtn').addEventListener('click', loadNextVideo);
             document.getElementById('play-pause-btn').addEventListener('click', togglePlayPause);
             document.getElementById('mute-unmute-btn').addEventListener('click', toggleMute);
 
-            // --- Thumbnail Click Handlers (Unchanged) ---
+            // --- Thumbnail Click Handlers ---
             thumbnailWrapper.addEventListener('click', (e) => {
                 if (e.target.id === 'close-thumbnail-btn') return;
                 
