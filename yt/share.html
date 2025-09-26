@@ -25,7 +25,6 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: #000;
             color: white;
-            /* Hide overflow to prevent scroll bars when the viewport is full */
             overflow: hidden; 
             width: 100vw;
             height: 100vh;
@@ -69,7 +68,6 @@
         }
 
         /* --- Fullscreen API Styling (Applies when the page or element is in native fullscreen) --- */
-        /* Targets the <html> element when in fullscreen mode */
         html:fullscreen,
         html:-webkit-full-screen,
         html:-moz-full-screen,
@@ -95,7 +93,7 @@
         }
 
 
-        /* --- LANDSCAPE MODE ADJUSTMENTS (CSS fallback/sizing) --- */
+        /* --- LANDSCAPE MODE ADJUSTMENTS --- */
         @media screen and (orientation: landscape) {
             .player-wrapper {
                 max-width: 100vw; 
@@ -108,14 +106,15 @@
                 max-height: 100%;
                 border-radius: 0;
             }
-            /* Adjust bottom bar for landscape (smaller and less intrusive) */
+            
+            /* FIX 1: Increase button size/padding for better visibility in landscape */
             .bottom-bar {
                 padding: 10px 20px 10px 20px;
                 gap: 10px;
             }
             .bottom-bar a, .bottom-bar button {
-                padding: 10px 15px; 
-                font-size: 14px;
+                padding: 12px 18px; /* Slightly more padding than default landscape */
+                font-size: 16px; /* Keep standard font size */
             }
         }
         
@@ -129,7 +128,8 @@
             max-width: 400px;
             display: flex;
             align-items: center;
-            padding: 10px;
+            /* Added padding on the right to make space for the absolute close button */
+            padding: 10px 40px 10px 10px; 
             background-color: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(5px);
             border-radius: 10px;
@@ -160,18 +160,26 @@
             opacity: 0.8;
         }
 
+        /* FIX 2: Close button positioning */
         #close-thumbnail-btn {
-            background: none;
-            border: none;
+            position: absolute; /* Position relative to the fixed wrapper */
+            right: 5px; 
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             color: white;
             font-size: 1.2rem;
-            font-weight: bold;
-            cursor: pointer;
-            padding: 0 5px;
+            padding: 0;
             line-height: 1;
-            opacity: 0.6;
+            opacity: 0.9;
             transition: opacity 0.2s;
-            z-index: 1;
+            z-index: 10;
         }
         #close-thumbnail-btn:hover {
             opacity: 1;
@@ -246,7 +254,6 @@
         #nav-buttons button:hover {
             background: rgba(255,255,255,0.5);
         }
-
     </style>
 </head>
 <body>
@@ -310,12 +317,56 @@
         let isMuted = false; 
         let currentBuyNowUrl = '#'; 
         let thumbnailTimeout; 
+        let messageBox; // Global reference for the custom message box
         
         const thumbnailWrapper = document.getElementById('thumbnail-wrapper');
         const playPauseBtn = document.getElementById('play-pause-btn');
         const muteUnmuteBtn = document.getElementById('mute-unmute-btn'); 
         const playerWrapper = document.getElementById('player-wrapper');
 
+
+        /**
+         * Initializes and returns the custom message box element.
+         */
+        function getMessageBox() {
+            if (!messageBox) {
+                messageBox = document.createElement('div');
+                messageBox.style.cssText = `
+                    position: fixed;
+                    bottom: 100px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background-color: rgba(255, 255, 255, 0.95);
+                    color: #333;
+                    padding: 12px 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+                    font-size: 14px;
+                    z-index: 9999;
+                    transition: opacity 0.3s ease;
+                    opacity: 0;
+                    pointer-events: none;
+                    max-width: 80%;
+                    text-align: center;
+                `;
+                document.body.appendChild(messageBox);
+            }
+            return messageBox;
+        }
+
+        /**
+         * Displays a temporary custom message (replaces alert()).
+         */
+        function showMessage(text) {
+            const box = getMessageBox();
+            box.textContent = text;
+            box.style.opacity = 1;
+            
+            // Hide after 3 seconds
+            setTimeout(() => {
+                box.style.opacity = 0;
+            }, 3000);
+        }
 
         /**
          * Checks the URL for a 'v' parameter and updates the starting index.
@@ -354,7 +405,6 @@
 
         /**
          * Cross-browser function to request native fullscreen.
-         * @param {HTMLElement} element 
          */
         function requestFullscreen(element) {
             if (element.requestFullscreen) {
@@ -389,23 +439,20 @@
 
         /**
          * Checks device orientation and triggers native fullscreen accordingly.
-         * This targets the playerWrapper to ensure the video scales correctly inside fullscreen.
          */
         function checkOrientation() {
             const isLandscape = window.matchMedia("(orientation: landscape)").matches;
             
             if (isLandscape) {
-                // When in landscape, automatically request native fullscreen on the player wrapper
                 requestFullscreen(playerWrapper);
             } else {
-                // When returning to portrait, exit native fullscreen if active on player wrapper
                 if (document.fullscreenElement === playerWrapper || document.webkitFullscreenElement === playerWrapper || document.mozFullScreenElement === playerWrapper || document.msFullscreenElement === playerWrapper) {
                     exitFullscreen();
                 }
             }
         }
 
-        // --- Share Function ---
+        // --- Share Function (FIX 3: Improved share fallback) ---
         async function shareWithThumbnail(videoTitle, videoUrl, thumbnailUrl) {
             
             const currentVideo = videos[currentVideoIndex];
@@ -416,10 +463,9 @@
                 const blob = await response.blob();
                 const file = new File([blob], "thumbnail.jpg", { type: blob.type });
                 
-                // Using a concise title and placing the full message/link in 'text'
                 const shareData = {
-                    title: "Watch this video", // Concise title for native share dialog
-                    text: `Check out: ${videoTitle}\n${videoUrl}`, // Title and link separated by newline
+                    title: "Watch this video", 
+                    text: `Check out: ${videoTitle}\n${videoUrl}`, 
                     url: videoUrl,
                     files: [file]
                 };
@@ -427,7 +473,6 @@
                 if (navigator.canShare && navigator.canShare({ files: shareData.files })) {
                     await navigator.share(shareData);
                 } else {
-                    // Fallback to simple link share
                     await navigator.share({
                         title: shareData.title,
                         text: shareData.text,
@@ -435,11 +480,12 @@
                     });
                 }
             } catch (error) {
-                console.error("Error sharing:", error);
+                console.error("Error sharing (Fallback executed):", error);
                 
-                // Final Fallback: Copy link to clipboard
+                // Final Fallback: Copy link and message to clipboard
                 const fallbackText = `Check out: ${videoTitle}\n${videoUrl}`;
-                // Using document.execCommand('copy') for better iframe compatibility
+                
+                // Use execCommand('copy') which is more reliable in iframes than navigator.clipboard
                 const tempInput = document.createElement('textarea');
                 tempInput.value = fallbackText;
                 document.body.appendChild(tempInput);
@@ -447,7 +493,8 @@
                 document.execCommand('copy');
                 document.body.removeChild(tempInput);
                 
-                alert(`Share failed. Link copied to clipboard:\n${fallbackText}`); 
+                // Use custom message box instead of alert()
+                showMessage(`Share failed. Link and title copied to clipboard!`); 
             }
         }
         // ----------------------------------------------------------------------------------
@@ -577,14 +624,12 @@
         
         document.addEventListener('DOMContentLoaded', () => {
             
-            // 1. ATTEMPT FULLSCREEN ON PAGE LOAD (for the whole page)
-            // This is requested by the user. Note that many browsers will block this
-            // unless triggered by a direct user gesture (like a button click).
+            // ATTEMPT FULLSCREEN ON PAGE LOAD
+            // Note: This often requires a user interaction on modern browsers, but we try anyway.
             setTimeout(() => {
                 requestFullscreen(document.documentElement);
             }, 1000); 
 
-            // 2. Add listeners for rotation (which also triggers fullscreen on landscape)
             window.addEventListener('orientationchange', checkOrientation);
 
             const swiper = document.getElementById('swiper-container');
@@ -631,6 +676,7 @@
 
             // --- Thumbnail Click Handlers ---
             thumbnailWrapper.addEventListener('click', (e) => {
+                // Ensure clicking the close button doesn't also trigger the link
                 if (e.target.id === 'close-thumbnail-btn') return;
                 
                 if (currentBuyNowUrl && currentBuyNowUrl !== '#') {
