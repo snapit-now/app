@@ -10,6 +10,7 @@
     <meta property="og:image" id="og-image" content="">
     <meta property="og:url" id="og-url" content="">
     <meta property="og:type" content="video.other">
+    <meta name="twitter:card" content="summary_large_image">
 
     <style>
         :root {
@@ -159,6 +160,7 @@
         }
 
         .share-btn {
+            /* 80% transparent */
             background-color: rgba(255, 255, 255, 0.2);
             color: white;
         }
@@ -177,7 +179,7 @@
         
         /* Nav buttons style applied to all buttons in the nav-buttons container */
         #nav-buttons button {
-            /* 80% transparent */
+            /* 80% transparent (0.2 opacity) */
             background: rgba(255,255,255,0.2); 
             border: none;
             color: #fff;
@@ -255,7 +257,6 @@
         // ------------------------------------
 
         let player;
-        // MODIFIED: currentVideoIndex is now set by checkURLForVideoId
         let currentVideoIndex = 0; 
         let isMuted = false; 
         let currentBuyNowUrl = '#'; 
@@ -282,7 +283,8 @@
         }
 
         /**
-         * Updates the Open Graph (OG) meta tags in the document head for social sharing.
+         * UPDATED: Updates the Open Graph (OG) meta tags in the document head for social sharing.
+         * The title comes from the local array, and the image is generated from the YouTube ID.
          * @param {object} videoData - The data object for the current video.
          * @param {string} shareUrl - The full URL to be shared.
          */
@@ -291,20 +293,17 @@
             const ogImage = document.getElementById('og-image');
             const ogUrl = document.getElementById('og-url');
 
-            // Set the dynamic content
-            ogTitle.content = videoData.title;
-            // Prioritize the product thumbnail, otherwise use a high-quality YouTube thumbnail
-            ogImage.content = videoData.productThumbnailUrl || `https://img.youtube.com/vi/${videoData.videoId}/hqdefault.jpg`;
+            // 1. OG Title: Use title from local array (acting as generated YouTube data)
+            ogTitle.content = `Watch: ${videoData.title}`; 
+            
+            // 2. OG Image: Use the reliable YouTube High-Quality thumbnail URL pattern
+            const youtubeThumbnailUrl = `https://img.youtube.com/vi/${videoData.videoId}/hqdefault.jpg`;
+            ogImage.content = youtubeThumbnailUrl;
+            
             ogUrl.content = shareUrl;
 
-            // Optional: for Twitter
-            const twitterCard = document.querySelector('meta[name="twitter:card"]');
-            if (!twitterCard) {
-                const newTag = document.createElement('meta');
-                newTag.name = "twitter:card";
-                newTag.content = "summary_large_image";
-                document.head.appendChild(newTag);
-            }
+            // Ensure the page title also matches
+            document.title = videoData.title;
         }
 
 
@@ -375,6 +374,7 @@
             // --- Set Thumbnail Image & Control Visibility ---
             buyNowThumbnail.src = video.productThumbnailUrl || `https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`;
             
+            // Hide thumbnail immediately when a new video loads
             thumbnailWrapper.classList.add('hidden'); 
 
             // Clear any previous timeout
@@ -382,7 +382,7 @@
 
             player.loadVideoById(video.videoId);
             
-            // Audio Logic: Set mute state based on the 'isMuted' variable
+            // Audio Logic...
             if (isMuted) {
                 player.mute();
                 muteUnmuteBtn.textContent = '🔇';
@@ -446,12 +446,7 @@
             
             const swiper = document.getElementById('swiper-container');
             
-            // --- Tap anywhere on the screen to Play/Pause ---
-            swiper.addEventListener('click', () => {
-                togglePlayPause();
-            });
-            
-            // --- Swipe Up/Down Logic (Uses touch/mouse events) ---
+            // --- Swipe Up/Down Logic ---
             let touchStartY = 0;
             let touchEndY = 0;
             const swipeThreshold = 50; 
@@ -467,19 +462,21 @@
                 }
             }
 
+            // Bind touch/mouse events for swiping
             swiper.addEventListener('touchstart', e => { touchStartY = e.changedTouches[0].screenY; }, { passive: true });
             swiper.addEventListener('touchend', e => { touchEndY = e.changedTouches[0].screenY; handleSwipe(); }, { passive: true });
             swiper.addEventListener('mousedown', e => { touchStartY = e.screenY; });
             swiper.addEventListener('mouseup', e => { touchEndY = e.screenY; handleSwipe(); });
 
-            // --- Share Button Logic (UPDATED to include OG tag update) ---
+
+            // --- Share Button Logic (Updated for OG Tags) ---
             document.getElementById('share-btn').addEventListener('click', async () => {
                 const currentVideo = videos[currentVideoIndex];
                 
-                // Construct the share URL with the current video ID
+                // 1. Construct the share URL with the current video ID
                 const shareUrl = `${window.location.origin}${window.location.pathname}?v=${currentVideo.videoId}`; 
                 
-                // IMPORTANT: Update Open Graph tags just before sharing
+                // 2. Update Open Graph tags just before sharing (Handles OG image/title generation)
                 updateOGTags(currentVideo, shareUrl);
 
                 const shareData = { 
@@ -489,6 +486,7 @@
                 };
 
                 try {
+                    // Use native sharing if available
                     if (navigator.share) await navigator.share(shareData);
                     else { 
                         // Fallback: Copy link to clipboard
@@ -501,14 +499,14 @@
                 }
             });
 
-            // --- Side Navigation Button Logic ---
+            // --- Navigation and Controls ---
+            swiper.addEventListener('click', togglePlayPause);
             document.getElementById('upBtn').addEventListener('click', loadPreviousVideo);
             document.getElementById('downBtn').addEventListener('click', loadNextVideo);
-            
             document.getElementById('play-pause-btn').addEventListener('click', togglePlayPause);
             document.getElementById('mute-unmute-btn').addEventListener('click', toggleMute);
 
-            // --- Clickable Thumbnail Wrapper Event ---
+            // --- Thumbnail Click Handlers ---
             thumbnailWrapper.addEventListener('click', (e) => {
                 if (e.target.id === 'close-thumbnail-btn') return;
                 
@@ -517,7 +515,6 @@
                 }
             });
             
-            // --- Close Thumbnail Button Event ---
             document.getElementById('close-thumbnail-btn').addEventListener('click', () => {
                 thumbnailWrapper.classList.add('hidden');
             });
