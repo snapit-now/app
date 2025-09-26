@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Interactive Video Swiper</title>
+    <style>
+        :root {
+            --touch-action: none; /* Disables pull-to-refresh on mobile */
+        }
+        
+        /* General Body Styling */
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #000; /* Black background for immersive feel */
+            color: white;
+            overflow: hidden; /* Hide all scrollbars */
+            height: 100vh;
+        }
+
+        /* Swiper container to capture touch/mouse events */
+        .swiper-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            touch-action: var(--touch-action); /* Apply touch-action from variable */
+        }
+
+        /* Player wrapper for sizing and centering */
+        .player-wrapper {
+            width: 100%;
+            max-width: 450px; /* Max width for vertical video players */
+            height: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        /* The actual player div that YouTube API will replace */
+        #player {
+            width: 100%;
+            aspect-ratio: 9 / 16;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: opacity 0.3s ease-in-out; /* For smooth video transitions */
+            pointer-events: none; /* Keep clicks disabled on the video */
+        }
+
+        #player.loading {
+            opacity: 0; /* Hide the player briefly while a new video loads */
+        }
+
+        /* --- THUMBNAIL WRAPPER STYLING --- */
+        .thumbnail-wrapper {
+            position: fixed;
+            bottom: 120px; /* Position above the bottom bar */
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 40px);
+            max-width: 400px; /* Max width slightly less than player */
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(5px);
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            opacity: 1;
+            z-index: 9;
+            cursor: pointer; /* Makes it visually clear it's clickable */
+        }
+        .thumbnail-wrapper.hidden {
+            opacity: 0;
+            transform: translateX(-50%) translateY(20px);
+            pointer-events: none;
+        }
+
+        #buy-now-thumbnail {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-right: 15px;
+        }
+
+        .thumbnail-info {
+            flex-grow: 1;
+        }
+
+        .thumbnail-info p {
+            margin: 0;
+            font-size: 0.9rem;
+            font-weight: 500;
+            opacity: 0.8;
+        }
+
+        #close-thumbnail-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 0 5px;
+            line-height: 1;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+            z-index: 1; /* Ensure close button is clickable */
+        }
+        #close-thumbnail-btn:hover {
+            opacity: 1;
+        }
+
+        /* Fixed Bottom Bar Styling */
+        .bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+            padding: 20px 20px 30px 20px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            gap: 15px;
+            box-sizing: border-box;
+            z-index: 10;
+        }
+
+        /* General Button Styling */
+        .bottom-bar a, .bottom-bar button {
+            text-decoration: none;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            flex-grow: 1;
+            text-align: center;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .buy-now-btn {
+            background-color: #0a84ff;
+            color: white;
+        }
+
+        .share-btn {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        /* Up/down nav button styling */
+        #nav-buttons {
+            position: fixed;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+        
+        /* Nav buttons style applied to all buttons in the nav-buttons container */
+        #nav-buttons button {
+            background: rgba(255,255,255,0.25);
+            border: none;
+            color: #fff;
+            font-weight: bold;
+            padding: 10px 14px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            border-radius: 6px;
+            user-select: none;
+            transition: background 0.3s ease;
+            line-height: 1;
+        }
+        #nav-buttons button:hover {
+            background: rgba(255,255,255,0.5);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="swiper-container" id="swiper-container">
+        <div class="player-wrapper">
+            <div id="player"></div>
+        </div>
+    </div>
+
+    <div class="thumbnail-wrapper" id="thumbnail-wrapper" role="button" aria-label="Check out the product">
+        <img id="buy-now-thumbnail" src="" alt="Product Thumbnail">
+        <div class="thumbnail-info">
+            <p>Ready to see more?</p>
+            <p style="font-size:1.1rem; font-weight:bold;">Check out this product!</p>
+        </div>
+        <button id="close-thumbnail-btn">×</button>
+    </div>
+
+    <div id="nav-buttons" aria-label="Navigation and Controls">
+        <button id="upBtn" aria-label="Previous video">▲</button>
+        <button id="downBtn" aria-label="Next video">▼</button>
+        <button id="play-pause-btn" aria-label="Pause video">❚❚</button>
+        <button id="mute-unmute-btn" aria-label="Mute video">🔊</button>
+        <button id="website" aria-label="More Links (Linktree)" onclick="window.open('https://linktr.ee/snapit.now', '_blank')">🌐</button>
+
+
+    </div>
+
+    <div class="bottom-bar">
+        <a id="buy-now-link" href="#" target="_blank" class="buy-now-btn">Buy Now</a>
+        <button id="share-btn" class="share-btn">🔗 Share</button>
+    </div>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+    
+    <script>
+        // --- CUSTOMIZE YOUR VIDEOS HERE ---
+        const videos = [
+            {
+                videoId: 'hMy5za-m5Ew',
+                title: 'Beautiful Mountain Scenery',
+                buyNowUrl: 'https://example.com/product/mountain-trip',
+                productThumbnailUrl: 'https://m.media-amazon.com/images/I/71MXSFRW87L._AC_SY200_.jpg' 
+            },
+            {
+                videoId: 'OnP7gfwa5w0',
+                title: 'Stunning Ocean Waves',
+                buyNowUrl: 'https://example.com/product/ocean-poster',
+                productThumbnailUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&h=100&q=80'
+            },
+            {
+                videoId: '9gopO8rbiX4',
+                title: 'Cozy Fireplace',
+                buyNowUrl: 'https://example.com/product/fireplace-screen',
+                productThumbnailUrl: 'https://images.unsplash.com/photo-1549488344-934dcfc96e05?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&h=100&q=80'
+            }
+        ];
+        // ------------------------------------
+
+        let player;
+        let currentVideoIndex = 0;
+        let isMuted = false; // Default state is UNMUTED
+        let currentBuyNowUrl = '#'; 
+        
+        const thumbnailWrapper = document.getElementById('thumbnail-wrapper');
+        const buyNowThumbnail = document.getElementById('buy-now-thumbnail');
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        const muteUnmuteBtn = document.getElementById('mute-unmute-btn'); 
+
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                height: '100%',
+                width: '100%',
+                playerVars: {
+                    'playsinline': 1, 'autoplay': 1, 
+                    'controls': 0, 
+                    'loop': 0, 
+                    'modestbranding': 1, 
+                    'rel': 0,
+                    'showinfo': 0 
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange,
+                    'onError': onPlayerError
+                }
+            });
+        }
+        
+        // --- Core Player Functions ---
+
+        function onPlayerReady(event) {
+            loadVideoByIndex(currentVideoIndex);
+        }
+
+        function onPlayerStateChange(event) {
+            const state = event.data;
+            if (state === YT.PlayerState.PLAYING) {
+                playPauseBtn.textContent = '❚❚'; 
+                playPauseBtn.setAttribute('aria-label', 'Pause video');
+            } else if (state === YT.PlayerState.PAUSED || state === YT.PlayerState.BUFFERING) {
+                playPauseBtn.textContent = '▶'; 
+                playPauseBtn.setAttribute('aria-label', 'Play video');
+            } else if (state === YT.PlayerState.ENDED) {
+                loadNextVideo();
+            }
+        }
+
+        function onPlayerError(event) {
+            console.error("YouTube Player Error:", event.data);
+            const unavailableErrorCodes = [2, 100, 101, 150];
+            if (unavailableErrorCodes.includes(event.data)) {
+                console.log("Video is unavailable. Loading next video automatically.");
+                loadNextVideo();
+            }
+        }
+
+        function loadVideoByIndex(index) {
+            if (index < 0 || index >= videos.length) return;
+            
+            const playerElement = document.getElementById('player');
+            playerElement.classList.add('loading');
+            
+            currentVideoIndex = index;
+            const video = videos[currentVideoIndex];
+            
+            currentBuyNowUrl = video.buyNowUrl; 
+
+            // --- Set Thumbnail Image (Uses productThumbnailUrl first) ---
+            buyNowThumbnail.src = video.productThumbnailUrl || `https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`;
+            thumbnailWrapper.classList.remove('hidden');
+
+            player.loadVideoById(video.videoId);
+            
+            // Audio Logic: Set mute state based on the 'isMuted' variable
+            if (isMuted) {
+                player.mute();
+                muteUnmuteBtn.textContent = '🔇';
+                muteUnmuteBtn.setAttribute('aria-label', 'Unmute video');
+            } else {
+                player.unMute(); 
+                muteUnmuteBtn.textContent = '🔊';
+                muteUnmuteBtn.setAttribute('aria-label', 'Mute video');
+            }
+            
+            setTimeout(() => {
+                player.playVideo();
+                playerElement.classList.remove('loading');
+            }, 500);
+
+            document.getElementById('buy-now-link').href = video.buyNowUrl;
+        }
+
+        function loadNextVideo() {
+            const nextIndex = (currentVideoIndex + 1) % videos.length;
+            loadVideoByIndex(nextIndex);
+        }
+
+        function loadPreviousVideo() {
+            const prevIndex = (currentVideoIndex - 1 + videos.length) % videos.length;
+            loadVideoByIndex(prevIndex);
+        }
+
+        function togglePlayPause() {
+            if (player.getPlayerState() === YT.PlayerState.PLAYING) {
+                player.pauseVideo();
+            } else {
+                player.playVideo();
+            }
+        }
+
+        function toggleMute() {
+            if (player.isMuted()) {
+                player.unMute();
+                isMuted = false;
+                muteUnmuteBtn.textContent = '🔊'; 
+                muteUnmuteBtn.setAttribute('aria-label', 'Mute video');
+            } else {
+                player.mute();
+                isMuted = true;
+                muteUnmuteBtn.textContent = '🔇'; 
+                muteUnmuteBtn.setAttribute('aria-label', 'Unmute video');
+            }
+        }
+
+
+        // --- Event Listener Setup ---
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            const swiper = document.getElementById('swiper-container');
+            
+            // --- NEW FEATURE: Tap anywhere on the screen to Play/Pause ---
+            swiper.addEventListener('click', () => {
+                togglePlayPause();
+            });
+            
+            // --- Swipe Up/Down Logic (Uses touch/mouse events) ---
+            let touchStartY = 0;
+            let touchEndY = 0;
+            const swipeThreshold = 50; 
+
+            function handleSwipe() {
+                const deltaY = touchStartY - touchEndY;
+                if (Math.abs(deltaY) > swipeThreshold) {
+                    if (deltaY > 0) { // Swiped Up
+                        loadNextVideo();
+                    } else { // Swiped Down
+                        loadPreviousVideo();
+                    }
+                }
+            }
+
+            // Note: The click listener above handles simple taps.
+            swiper.addEventListener('touchstart', e => { touchStartY = e.changedTouches[0].screenY; }, { passive: true });
+            swiper.addEventListener('touchend', e => { touchEndY = e.changedTouches[0].screenY; handleSwipe(); }, { passive: true });
+            swiper.addEventListener('mousedown', e => { touchStartY = e.screenY; });
+            swiper.addEventListener('mouseup', e => { touchEndY = e.screenY; handleSwipe(); });
+
+            // --- Share Button Logic ---
+            document.getElementById('share-btn').addEventListener('click', async () => {
+                const currentVideo = videos[currentVideoIndex];
+                const shareUrl = `${window.location.origin}${window.location.pathname}?v=${currentVideo.videoId}`;
+                const shareData = { title: 'Check out this video!', text: currentVideo.title, url: shareUrl };
+                try {
+                    if (navigator.share) await navigator.share(shareData);
+                    else { await navigator.clipboard.writeText(shareUrl); alert('Link copied to clipboard!'); }
+                } catch (err) {
+                    console.error('Error sharing:', err);
+                    alert(`Could not share. Copy this link: ${shareUrl}`);
+                }
+            });
+
+            // --- Side Navigation Button Logic ---
+            document.getElementById('upBtn').addEventListener('click', loadPreviousVideo);
+            document.getElementById('downBtn').addEventListener('click', loadNextVideo);
+            
+            // The side button still works, although the main screen tap now also calls togglePlayPause
+            document.getElementById('play-pause-btn').addEventListener('click', togglePlayPause);
+            document.getElementById('mute-unmute-btn').addEventListener('click', toggleMute);
+
+            // --- Clickable Thumbnail Wrapper Event ---
+            thumbnailWrapper.addEventListener('click', (e) => {
+                if (e.target.id === 'close-thumbnail-btn') return;
+                
+                if (currentBuyNowUrl && currentBuyNowUrl !== '#') {
+                    window.open(currentBuyNowUrl, '_blank');
+                }
+            });
+            
+            // --- Close Thumbnail Button Event ---
+            document.getElementById('close-thumbnail-btn').addEventListener('click', () => {
+                thumbnailWrapper.classList.add('hidden');
+            });
+        });
+    </script>
+
+</body>
+</html>
