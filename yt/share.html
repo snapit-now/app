@@ -340,11 +340,12 @@ function checkURLForVideoId() {
             videos.unshift(newVideoEntry);
             currentVideoIndex = 0; // Start with this video
             console.log(`Added external video ID ${videoIdFromUrl} to the list.`);
+            loadNextVideo();
         }
     } else {
         // No video ID found in URL, load first or next video from videos
         if (videos.length > 0) {
-            currentVideoIndex = 0; // start from first video in the list
+            currentVideoIndex = -1; // start from first video in the list
             console.log(`No video ID found in URL. Starting with video ID: ${videos[0].videoId}`);
             loadNextVideo();
         } else {
@@ -662,6 +663,7 @@ function checkURLForVideoId() {
 
 </body>
 </html>
+
 
 
 
