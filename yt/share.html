@@ -338,7 +338,7 @@
 
     /**
      * Checks the URL for a 'v' parameter and updates the starting index.
-     * If the video ID from the URL is not in the list, it defaults to the first video (index 0).
+     * ⭐ MODIFIED: If the video ID from the URL is not found, it defaults to the first video (index 0).
      */
     function checkURLForVideoId() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -349,7 +349,7 @@
             if (index !== -1) {
                 currentVideoIndex = index;
             } else {
-                // ⭐ MODIFIED: If videoId from URL is not found, default to the first video.
+                // Default to the first video (index 0) if the ID from the URL is not in the list.
                 console.log(`Video ID ${videoIdFromUrl} not found in list. Starting with default video.`);
                 currentVideoIndex = 0;
             }
@@ -419,7 +419,7 @@
 
     /**
      * Handles YouTube Player Errors (e.g., Invalid ID, Video Not Found).
-     * This ensures the first video or any subsequent video error automatically loads the next.
+     * ⭐ MODIFIED: Now loads the default video (index 0) upon error.
      */
     function onPlayerError(event) {
         console.error("YouTube Player Error:", event.data);
@@ -427,9 +427,9 @@
         const unavailableErrorCodes = [2, 100, 101, 150]; 
         
         if (unavailableErrorCodes.includes(event.data)) {
-            console.log("Video is unavailable/invalid. Loading next video automatically.");
-            // Load the next video to skip the problematic one
-            loadNextVideo();
+            console.log("Video is unavailable/invalid. Loading default video automatically.");
+            // Load the default video (index 0) to skip the problematic one
+            loadVideoByIndex(0);
         }
     }
 
@@ -517,24 +517,25 @@
             muteUnmuteBtn.setAttribute('aria-label', 'Mute video');
         }
     }
-    
+
     /**
-     * ⭐ NEW FUNCTION: Retrieves the current video title, thumbnail, and share URL,
+     * ⭐ NEW FUNCTION: Retrieves the current video title, product thumbnail URL, and share URL,
      * formatting them for sharing/copying.
      */
     function shareCurrentVideo() {
         const video = videos[currentVideoIndex];
         const shareTitle = video.title;
+        // The URL is kept up-to-date with the current video ID by updateURLWithVideoId()
         const shareUrl = window.location.href; 
         
         // Use the product thumbnail URL or fallback to the standard YouTube thumbnail
         const thumbnailUrl = video.productThumbnailUrl || `https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`;
 
         // Create the requested format: Title \n\n Thumbnail URL \n\n Share URL
-        const shareText = `${shareTitle}\n\nProduct/Video Thumbnail: ${thumbnailUrl}\n\n${shareUrl}`;
+        const shareText = `${shareTitle}\n\nProduct/Video Thumbnail URL: ${thumbnailUrl}\n\n${shareUrl}`;
 
+        // Attempt to use the Web Share API first
         if (navigator.share) {
-            // Use Web Share API (best practice)
             navigator.share({
                 title: shareTitle,
                 text: shareText, 
@@ -542,11 +543,11 @@
             }).then(() => {
                 console.log('Video shared successfully');
             }).catch((error) => {
-                console.error('Error sharing:', error);
+                console.error('Error sharing, falling back to clipboard:', error);
                 // Fallback to clipboard if Web Share API fails
                 navigator.clipboard.writeText(shareText)
                     .then(() => {
-                        alert('Share details copied to clipboard. (Web Share API failed)');
+                        alert('Share details copied to clipboard (Web Share API failed).');
                     })
                     .catch(err => {
                         console.error('Could not copy text:', err);
@@ -605,7 +606,7 @@
         document.getElementById('play-pause-btn').addEventListener('click', togglePlayPause);
         document.getElementById('mute-unmute-btn').addEventListener('click', toggleMute);
 
-        // Add event listener for a potential share button (e.g., id="share-btn")
+        // Event listener for a share button (assuming an element with id="share-btn" exists in the HTML)
         const shareBtn = document.getElementById('share-btn');
         if (shareBtn) {
             shareBtn.addEventListener('click', (e) => {
@@ -613,7 +614,7 @@
                 shareCurrentVideo();
             });
         }
-        
+
         // Add event listener for the close button on the thumbnail (if you include the HTML)
         const closeBtn = document.getElementById('close-thumbnail-btn');
         if (closeBtn) {
@@ -643,4 +644,5 @@ classesToHide.forEach(className => {
 
 </body>
 </html>
+
 
