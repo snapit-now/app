@@ -318,18 +318,39 @@
      * Checks the URL for a 'v' parameter and updates the starting index.
      * **MODIFIED to add external video IDs to the list.**
      */
-function checkURLForVideoId() {
+async function checkURLForVideoId() {
     const urlParams = new URLSearchParams(window.location.search);
     const videoIdFromUrl = urlParams.get('v');
+
+    // Helper to safely play a video by index, returns true if started playing, false if failed
+    async function tryPlayVideoAtIndex(index) {
+        if (index < 0 || index >= videos.length) return false;
+        currentVideoIndex = index;
+        try {
+            await playCurrentVideo(); // Assuming playCurrentVideo returns a Promise
+            return true;
+        } catch (error) {
+            console.warn(`Failed to play video at index ${index}:`, error);
+            return false;
+        }
+    }
 
     if (videoIdFromUrl) {
         const index = videos.findIndex(v => v.videoId === videoIdFromUrl);
 
         if (index !== -1) {
-            currentVideoIndex = index;
-            playCurrentVideo(); // Play the found video
+            // Video ID exists in list, try playing it
+            const played = await tryPlayVideoAtIndex(index);
+            if (!played) {
+                // If failed, fallback to first video
+                const fallbackPlayed = await tryPlayVideoAtIndex(0);
+                if (!fallbackPlayed) {
+                    // If that also fails, play next from start
+                    playLoadNextVideo();
+                }
+            }
         } else {
-            // Video ID not found, add it to the beginning
+            // Video ID not found, add it at front
             const newVideoEntry = {
                 videoId: videoIdFromUrl,
                 title: `External Video: ${videoIdFromUrl}`, // Placeholder title
@@ -337,15 +358,23 @@ function checkURLForVideoId() {
                 productThumbnailUrl: `https://img.youtube.com/vi/${videoIdFromUrl}/hqdefault.jpg`
             };
             videos.unshift(newVideoEntry);
-            currentVideoIndex = 0; // Start with this video
-            playCurrentVideo(); // Play the newly added video
+            // Try playing newly added video (index 0)
+            const played = await tryPlayVideoAtIndex(0);
+            if (!played) {
+                // Fallback to next video logic
+                playLoadNextVideo();
+            }
             console.log(`Added external video ID ${videoIdFromUrl} to the list.`);
         }
     } else {
-        // No video ID found in URL, load next video
-        playLoadNextVideo();
+        // No video ID in URL, start playing from index 0 or fallback
+        const played = await tryPlayVideoAtIndex(0);
+        if (!played) {
+            playLoadNextVideo();
+        }
     }
 }
+
 
 
 
@@ -655,5 +684,6 @@ function checkURLForVideoId() {
 
 </body>
 </html>
+
 
 
