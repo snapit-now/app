@@ -55,34 +55,31 @@
             overflow: hidden;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             transition: opacity 0.7s ease-in-out;
-            pointer-events: none; 
+            pointer-events: none; /* Important: Allows swipe events on the swiper-container beneath the iframe */
         }
 
         #player.loading {
             opacity: 0;
         }
         
-        /* Hide YouTube pause overlay */
-.ytp-pause-overlay {
-  display: none !important;
-}
+        /* Hide YouTube UI elements for a cleaner look */
+        .ytp-pause-overlay {
+            display: none !important;
+        }
 
-/* Hide Shorts title/channel */
-.ytp-shorts-title-channel {
-  display: none !important;
-}
+        .ytp-shorts-title-channel {
+            display: none !important;
+        }
 
-/* Hide top buttons (e.g., share, settings) */
-.ytp-chrome-top-buttons {
-  display: none !important;
-}
+        .ytp-chrome-top-buttons {
+            display: none !important;
+        }
 
-/* Hide watermark */
-.ytp-watermark,
-.yt-uix-sessionlink,
-.ytp-watermark-small {
-  display: none !important;
-}
+        .ytp-watermark,
+        .yt-uix-sessionlink,
+        .ytp-watermark-small {
+            display: none !important;
+        }
 
         /* --- THUMBNAIL WRAPPER STYLING --- */
         .thumbnail-wrapper {
@@ -207,7 +204,6 @@
 
             /* Ensure the player iframe scales correctly in landscape */
             .player-wrapper {
-                /* Limits width to 70% of viewport height (the short side) for better fit */
                 max-width: auto; 
             }
         }
@@ -276,104 +272,105 @@
     </div>
 
 <script src="https://www.youtube.com/iframe_api"></script>
- 
+    
 <script>
-    // --- CUSTOMIZE YOUR VIDEOS HERE ---
-    const videos = [
-        {
-            videoId: 'UVtcZP0UArA',
-            title: 'Beautiful Mountain Scenery',
-            buyNowUrl: 'https://example.com/product/mountain-trip',
-            productThumbnailUrl: 'https://m.media-amazon.com/images/I/71MXSFRW87L._AC_SY200_.jpg' 
-        },
-        {
-            videoId: '6T0Nrzz-uAs',
-            title: 'Stunning Ocean Waves',
-            buyNowUrl: 'https://example.com/product/ocean-poster',
-            productThumbnailUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&h=100&q=80'
-        },
-        {
-            videoId: 'PIQGGKzakJI',
-            title: 'Cozy Fireplace1',
-            buyNowUrl: 'https://example.com/product/fireplace-screen1',
-            productThumbnailUrl: ''
-        },
-        {
-            videoId: 'b0ox5ujLE8Y',
-            title: 'Cozy Fireplace2',
-            buyNowUrl: 'https://example.com/product/fireplace-screen2',
-            productThumbnailUrl: ''
-        },
-        {
-            videoId: 'KFGu4xpNHyA',
-            title: 'Cozy Fireplace3',
-            buyNowUrl: 'https://example.com/product/fireplace-screen3',
-            productThumbnailUrl: ''
-        },
-        {
-            videoId: '0K-AEI4_t7Y',
-            title: 'Cozy Fireplace4',
-            buyNowUrl: 'https://example.com/product/fireplace-screen4',
-            productThumbnailUrl: ''
-        },
-        {
-            videoId: 'CslCs-U0_8E',
-            title: 'Cozy Fireplace5',
-            buyNowUrl: 'https://example.com/product/fireplace-screen5',
-            productThumbnailUrl: ''
-        }
-    ];
-    // ------------------------------------
+    // --- CUSTOMIZE YOUR VIDEOS HERE ---
+    const videos = [
+        {
+            videoId: 'UVtcZP0UArA',
+            title: 'Beautiful Mountain Scenery',
+            buyNowUrl: 'https://example.com/product/mountain-trip',
+            productThumbnailUrl: 'https://m.media-amazon.com/images/I/71MXSFRW87L._AC_SY200_.jpg' 
+        },
+        {
+            videoId: '6T0Nrzz-uAs',
+            title: 'Stunning Ocean Waves',
+            buyNowUrl: 'https://example.com/product/ocean-poster',
+            productThumbnailUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=100&h=100&q=80'
+        },
+        {
+            videoId: 'PIQGGKzakJI',
+            title: 'Cozy Fireplace1',
+            buyNowUrl: 'https://example.com/product/fireplace-screen1',
+            productThumbnailUrl: ''
+        },
+        {
+            videoId: 'b0ox5ujLE8Y',
+            title: 'Cozy Fireplace2',
+            buyNowUrl: 'https://example.com/product/fireplace-screen2',
+            productThumbnailUrl: ''
+        },
+        {
+            videoId: 'KFGu4xpNHyA',
+            title: 'Cozy Fireplace3',
+            buyNowUrl: 'https://example.com/product/fireplace-screen3',
+            productThumbnailUrl: ''
+        },
+        {
+            videoId: '0K-AEI4_t7Y',
+            title: 'Cozy Fireplace4',
+            buyNowUrl: 'https://example.com/product/fireplace-screen4',
+            productThumbnailUrl: ''
+        },
+        {
+            videoId: 'CslCs-U0_8E',
+            title: 'Cozy Fireplace5',
+            buyNowUrl: 'https://example.com/product/fireplace-screen5',
+            productThumbnailUrl: ''
+        }
+    ];
+    // ------------------------------------
 
-    let player;
-    let currentVideoIndex = 0; 
-    let isMuted = false; 
-    let currentBuyNowUrl = '#'; 
-    let thumbnailTimeout;
-    let currentYouTubeTitle = ''; // New variable to store the original YouTube title
-    
-    const thumbnailWrapper = document.getElementById('thumbnail-wrapper');
-    const buyNowThumbnail = document.getElementById('buy-now-thumbnail');
-    const playPauseBtn = document.getElementById('play-pause-btn');
-    const muteUnmuteBtn = document.getElementById('mute-unmute-btn'); 
-
-    /**
-     * Checks the URL for a 'v' parameter and updates the starting index.
-     * Corrected to default to videos[0] if the ID is not found.
-     */
-    function checkURLForVideoId() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const videoIdFromUrl = urlParams.get('v');
-
-        if (videoIdFromUrl) {
-            const index = videos.findIndex(v => v.videoId === videoIdFromUrl);
-            if (index !== -1) {
-                currentVideoIndex = index;
-            } else {
-                // Add unknown video ID to the beginning for playback
-                const newVideoEntry = {
-                    videoId: videoIdFromUrl,
-                    title: `External Video: ${videoIdFromUrl}`,
-                    buyNowUrl: 'https://linktr.ee/snapit.now',
-                    productThumbnailUrl: `https://img.youtube.com/vi/${videoIdFromUrl}/hqdefault.jpg`
-                };
-                videos.unshift(newVideoEntry);
-                currentVideoIndex = 0;
-                console.log(`Added external video ID ${videoIdFromUrl} to the list.`);
-            }
-        }
-    }
-
-    /**
-     * Updates the browser URL to reflect the currently playing video ID.
-     */
-    function updateURLWithVideoId(videoId) {
-        const shareUrl = `${window.location.origin}${window.location.pathname}?v=${videoId}`;
-        window.history.replaceState('', shareUrl);
-    }
+    let player;
+    let currentVideoIndex = 0; 
+    let isMuted = false; 
+    let currentBuyNowUrl = '#'; 
+    let thumbnailTimeout;
+    let currentYouTubeTitle = ''; // Stores the actual YouTube video title
+    
+    const thumbnailWrapper = document.getElementById('thumbnail-wrapper');
+    const buyNowThumbnail = document.getElementById('buy-now-thumbnail');
+    const playPauseBtn = document.getElementById('play-pause-btn');
+    const muteUnmuteBtn = document.getElementById('mute-unmute-btn'); 
 
     /**
-     * ⭐ NEW FUNCTION: Simulates saving all current video metadata to a backend.
+     * Checks the URL for a 'v' parameter and updates the starting index.
+     */
+    function checkURLForVideoId() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const videoIdFromUrl = urlParams.get('v');
+
+        if (videoIdFromUrl) {
+            const index = videos.findIndex(v => v.videoId === videoIdFromUrl);
+            if (index !== -1) {
+                currentVideoIndex = index;
+            } else {
+                // Add unknown video ID to the beginning for playback
+                const newVideoEntry = {
+                    videoId: videoIdFromUrl,
+                    title: `External Video: ${videoIdFromUrl}`,
+                    buyNowUrl: '#',
+                    productThumbnailUrl: `https://img.youtube.com/vi/${videoIdFromUrl}/hqdefault.jpg`
+                };
+                videos.unshift(newVideoEntry);
+                currentVideoIndex = 0;
+                console.log(`Added external video ID ${videoIdFromUrl} to the list.`);
+                
+                // NO loadNextVideo() here. The main API function will load index 0.
+            }
+        }
+    }
+
+    /**
+     * Updates the browser URL to reflect the currently playing video ID.
+     */
+    function updateURLWithVideoId(videoId) {
+        const shareUrl = `${window.location.origin}${window.location.pathname}?v=${videoId}`;
+        window.history.replaceState('', '', shareUrl); // Use replaceState for cleaner history
+    }
+
+    /**
+     * Simulates saving all current video metadata to a backend.
      */
     function saveMetaDataToBackend() {
         const video = videos[currentVideoIndex];
@@ -389,7 +386,7 @@
 
         console.log("Saving metadata to backend:", metadata);
 
-        // Replace 'YOUR_BACKEND_ENDPOINT' with the actual URL where you want to save the data
+        // This is where you would place your actual fetch call
         /*
         fetch('YOUR_BACKEND_ENDPOINT', {
             method: 'POST',
@@ -403,169 +400,173 @@
         .catch((error) => console.error('Error saving metadata:', error));
         */
     }
-    
+    
 
-    // This function is called automatically when the YouTube API script loads.
-    function onYouTubeIframeAPIReady() {
-        checkURLForVideoId(); 
-        
-        player = new YT.Player('player', {
-            height: '100%',
-            width: '100%',
-            videoId: videos[currentVideoIndex].videoId, 
-            playerVars: {
-                'playsinline': 1, 
-                'autoplay': 1, 
-                'controls': 0, 
-                'loop': 0, 
-                'modestbranding': 1, 
-                'rel': 0,
-                'showinfo': 0 
-            },
-            events: {
-                'onReady': onPlayerReady,
-                'onStateChange': onPlayerStateChange,
-                'onError': onPlayerError 
-            }
-        });
-    }
-    
-    // --- Core Player Functions ---
+    // This function is called automatically when the YouTube API script loads.
+    window.onYouTubeIframeAPIReady = function() { // Ensure it's globally accessible
+        checkURLForVideoId(); 
+        
+        player = new YT.Player('player', {
+            height: '100%',
+            width: '100%',
+            videoId: videos[currentVideoIndex].videoId, 
+            playerVars: {
+                'playsinline': 1, 
+                'autoplay': 1, 
+                'controls': 0, 
+                'loop': 0, 
+                'modestbranding': 1, 
+                'rel': 0,
+                'showinfo': 0 
+            },
+            events: {
+                'onReady': onPlayerReady,
+                'onStateChange': onPlayerStateChange,
+                'onError': onPlayerError 
+            }
+        });
+    }
+    
+    // --- Core Player Functions ---
 
-    function onPlayerReady(event) {
-        loadVideoByIndex(currentVideoIndex); 
-        event.target.playVideo();
-    }
+    function onPlayerReady(event) {
+        // Load the video data, set mute state, and play, all within loadVideoByIndex
+        // This ensures the first video is loaded using the same consistent logic as all subsequent videos.
+        loadVideoByIndex(currentVideoIndex); 
+    }
 
-    /**
-     * Handles automatic skipping when the video ends or an Ad starts.
+    /**
+     * Handles automatic skipping when the video ends or an Ad starts.
      * Also captures the YouTube title and saves metadata when playback starts.
-     */
-    function onPlayerStateChange(event) {
-        const state = event.data;
-        if (state === YT.PlayerState.PLAYING) {
+     */
+    function onPlayerStateChange(event) {
+        const state = event.data;
+        if (state === YT.PlayerState.PLAYING) {
             const videoData = player.getVideoData();
+            // Capture the actual YouTube title from the player data
             currentYouTubeTitle = videoData ? videoData.title : videos[currentVideoIndex].title;
             // Save metadata every time a new video begins playing
             saveMetaDataToBackend();
 
-            playPauseBtn.textContent = '❚❚'; 
-            playPauseBtn.setAttribute('aria-label', 'Pause video');
-        } else if (state === YT.PlayerState.PAUSED || state === YT.PlayerState.BUFFERING) {
-            playPauseBtn.textContent = '▶'; 
-            playPauseBtn.setAttribute('aria-label', 'Play video');
-        } else if (state === YT.PlayerState.ENDED) {
-            loadNextVideo(); // Auto-load next video when the current one ends
-        } else if (state === YT.PlayerState.AD_STARTED) {
-            // Auto-skip when an ad starts
-            console.log("Ad detected. Skipping to the next video automatically.");
-            loadNextVideo();
-        }
-    }
-
-    /**
-     * Handles YouTube Player Errors (e.g., Invalid ID, Video Not Found).
-     * Corrected to default to the first video (index 0).
-     */
-    function onPlayerError(event) {
-        console.error("YouTube Player Error:", event.data);
-        // Common error codes for invalid video/playback issues
-        const unavailableErrorCodes = [2, 100, 101, 150]; 
-        
-        if (unavailableErrorCodes.includes(event.data)) {
-            console.log("Video is unavailable/invalid. Loading default video automatically.");
-            // Load the default video (index 0) to skip the problematic one
-            loadVideoByIndex(0);
-        }
-    }
-
-    function loadVideoByIndex(index) {
-        if (index < 0 || index >= videos.length) return;
-        
-        const playerElement = document.getElementById('player');
-        playerElement.classList.add('loading');
-        
-        currentVideoIndex = index;
-        const video = videos[currentVideoIndex];
-        
-        currentBuyNowUrl = video.buyNowUrl; 
-
-        // Update thumbnail/link visibility
-        buyNowThumbnail.src = video.productThumbnailUrl || `https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`;
-        thumbnailWrapper.classList.add('hidden'); 
-        if (thumbnailTimeout) clearTimeout(thumbnailTimeout);
-
-        player.loadVideoById(video.videoId);
-        updateURLWithVideoId(video.videoId);
-        
-        // Reapply mute state
-        if (player.isMuted() || isMuted) {
-            player.mute();
-            isMuted = true;
-            muteUnmuteBtn.textContent = '🔇';
-            muteUnmuteBtn.setAttribute('aria-label', 'Unmute video');
-        } else {
-            player.unMute(); 
-            isMuted = false;
-            muteUnmuteBtn.textContent = '🔊';
-            muteUnmuteBtn.setAttribute('aria-label', 'Mute video');
-        }
-        
-        setTimeout(() => {
-            player.playVideo();
-            playerElement.classList.remove('loading');
-            
-            // Show product thumbnail/link after 5 seconds
-            thumbnailTimeout = setTimeout(() => {
-                thumbnailWrapper.classList.remove('hidden');
-            }, 5000); 
-
-        }, 500);
-
-        // Update bottom bar link
-        document.getElementById('buy-now-link').href = video.buyNowUrl;
-    }
-
-    /**
-     * Moves to the next video, wrapping to the start if needed.
-     */
-    function loadNextVideo() {
-        const nextIndex = (currentVideoIndex + 1) % videos.length;
-        loadVideoByIndex(nextIndex);
-    }
-
-    /**
-     * Moves to the previous video, wrapping to the end if needed.
-     */
-    function loadPreviousVideo() {
-        const prevIndex = (currentVideoIndex - 1 + videos.length) % videos.length;
-        loadVideoByIndex(prevIndex);
-    }
-
-    function togglePlayPause() {
-        if (player.getPlayerState() === YT.PlayerState.PLAYING) {
-            player.pauseVideo();
-        } else {
-            player.playVideo();
-        }
-    }
-
-    function toggleMute() {
-        if (player.isMuted()) {
-            player.unMute();
-            isMuted = false;
-            muteUnmuteBtn.textContent = '🔊'; 
-            muteUnmuteBtn.setAttribute('aria-label', 'Unmute video');
-        } else {
-            player.mute();
-            isMuted = true;
-            muteUnmuteBtn.textContent = '🔇'; 
-            muteUnmuteBtn.setAttribute('aria-label', 'Mute video');
-        }
-    }
+            playPauseBtn.textContent = '❚❚'; 
+            playPauseBtn.setAttribute('aria-label', 'Pause video');
+        } else if (state === YT.PlayerState.PAUSED || state === YT.PlayerState.BUFFERING) {
+            playPauseBtn.textContent = '▶'; 
+            playPauseBtn.setAttribute('aria-label', 'Play video');
+        } else if (state === YT.PlayerState.ENDED) {
+            loadNextVideo(); // Auto-load next video when the current one ends
+        } else if (state === YT.PlayerState.AD_STARTED) {
+            // Auto-skip when an ad starts
+            console.log("Ad detected. Skipping to the next video automatically.");
+            loadNextVideo();
+        }
+    }
 
     /**
-     * ⭐ NEW FUNCTION: Compiles and shares video metadata including both custom and YouTube titles.
+     * Handles YouTube Player Errors (e.g., Invalid ID, Video Not Found).
+     */
+    function onPlayerError(event) {
+        console.error("YouTube Player Error:", event.data);
+        // Common error codes for invalid video/playback issues
+        const unavailableErrorCodes = [2, 100, 101, 150]; 
+        
+        if (unavailableErrorCodes.includes(event.data)) {
+            console.log("Video is unavailable/invalid. Loading next video automatically.");
+            // Load the next video in the list (or wrap) to skip the problematic one
+            loadNextVideo();
+        }
+    }
+
+    function loadVideoByIndex(index) {
+        if (index < 0 || index >= videos.length) return;
+        
+        const playerElement = document.getElementById('player');
+        playerElement.classList.add('loading');
+        
+        currentVideoIndex = index;
+        const video = videos[currentVideoIndex];
+        
+        currentBuyNowUrl = video.buyNowUrl; 
+
+        // Update thumbnail/link visibility
+        buyNowThumbnail.src = video.productThumbnailUrl || `https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`;
+        thumbnailWrapper.classList.add('hidden'); 
+        if (thumbnailTimeout) clearTimeout(thumbnailTimeout);
+
+        player.loadVideoById(video.videoId);
+        updateURLWithVideoId(video.videoId);
+        
+        // Reapply mute state
+        if (isMuted) {
+            player.mute();
+            muteUnmuteBtn.textContent = '🔇';
+            muteUnmuteBtn.setAttribute('aria-label', 'Unmute video');
+        } else {
+            player.unMute(); 
+            muteUnmuteBtn.textContent = '🔊';
+            muteUnmuteBtn.setAttribute('aria-label', 'Mute video');
+        }
+        
+        setTimeout(() => {
+            player.playVideo();
+            playerElement.classList.remove('loading');
+            
+            // Show product thumbnail/link after 5 seconds
+            thumbnailTimeout = setTimeout(() => {
+                thumbnailWrapper.classList.remove('hidden');
+            }, 5000); 
+
+        }, 500); // 500ms delay to ensure player is ready
+
+        // Update bottom bar link
+        document.getElementById('buy-now-link').href = video.buyNowUrl;
+    }
+
+    /**
+     * Moves to the next video, wrapping to the start if needed.
+     */
+    function loadNextVideo() {
+        const nextIndex = (currentVideoIndex + 1) % videos.length;
+        loadVideoByIndex(nextIndex);
+    }
+
+    /**
+     * Moves to the previous video, wrapping to the end if needed.
+     */
+    function loadPreviousVideo() {
+        const prevIndex = (currentVideoIndex - 1 + videos.length) % videos.length;
+        loadVideoByIndex(prevIndex);
+    }
+
+    function togglePlayPause() {
+        if (!player || typeof player.getPlayerState !== 'function') return;
+
+        const state = player.getPlayerState();
+        if (state === YT.PlayerState.PLAYING) {
+            player.pauseVideo();
+        } else if (state === YT.PlayerState.PAUSED || state === YT.PlayerState.ENDED) {
+            player.playVideo();
+        }
+    }
+
+    function toggleMute() {
+        if (!player || typeof player.isMuted !== 'function') return;
+
+        if (player.isMuted()) {
+            player.unMute();
+            isMuted = false;
+            muteUnmuteBtn.textContent = '🔊'; 
+            muteUnmuteBtn.setAttribute('aria-label', 'Mute video');
+        } else {
+            player.mute();
+            isMuted = true;
+            muteUnmuteBtn.textContent = '🔇'; 
+            muteUnmuteBtn.setAttribute('aria-label', 'Unmute video');
+        }
+    }
+
+    /**
+     * Compiles and shares video metadata.
      */
     function shareCurrentVideo() {
         const video = videos[currentVideoIndex];
@@ -575,10 +576,7 @@
         // Use the fetched YouTube title if available, otherwise use the custom one as a fallback
         const actualYouTubeTitle = currentYouTubeTitle || customTitle;
 
-        // Use the product thumbnail URL or fallback to the standard YouTube thumbnail
-        const thumbnailUrl = video.productThumbnailUrl || `https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`;
-
-        // Create the requested formatted text
+        // **CRITICAL FIX:** Added shareUrl inside the template literal.
         const shareText = `${actualYouTubeTitle}\n${customTitle}\n\nWatch Now: ${shareUrl}`;
 
         // Attempt to use the Web Share API first
@@ -613,47 +611,53 @@
                 });
         }
     }
-    
-    // --- Event Listener Setup ---
-    document.addEventListener('DOMContentLoaded', () => {
-        
-        const swiper = document.getElementById('swiper-container');
-        
-        // --- Swipe Up/Down Logic ---
-        let touchStartY = 0;
-        let touchEndY = 0;
-        const swipeThreshold = 50; 
+    
+    // --- Event Listener Setup ---
+    document.addEventListener('DOMContentLoaded', () => {
+        
+        const swiper = document.getElementById('swiper-container');
+        
+        // --- Swipe Up/Down Logic ---
+        let touchStartY = 0;
+        let touchEndY = 0;
+        const swipeThreshold = 50; 
 
-        function handleSwipe() {
-            const deltaY = touchStartY - touchEndY;
-            if (Math.abs(deltaY) > swipeThreshold) {
-                if (deltaY > 0) { // Swiped Up -> Next Video
-                    loadNextVideo();
-                } else { // Swiped Down -> Previous Video
-                    loadPreviousVideo();
-                }
-            }
-        }
+        function handleSwipe() {
+            const deltaY = touchStartY - touchEndY;
+            if (Math.abs(deltaY) > swipeThreshold) {
+                // Ensure no accidental click/tap event is registered
+                swiper.removeEventListener('click', togglePlayPause); 
+                setTimeout(() => swiper.addEventListener('click', togglePlayPause), 300); // Re-add after a short delay
 
-        swiper.addEventListener('touchstart', e => { touchStartY = e.changedTouches[0].screenY; }, { passive: true });
-        swiper.addEventListener('touchend', e => { touchEndY = e.changedTouches[0].screenY; handleSwipe(); }, { passive: true });
-        swiper.addEventListener('mousedown', e => { touchStartY = e.screenY; });
-        swiper.addEventListener('mouseup', e => { touchEndY = e.screenY; handleSwipe(); });
+                if (deltaY > 0) { // Swiped Up -> Next Video
+                    loadNextVideo();
+                } else { // Swiped Down -> Previous Video
+                    loadPreviousVideo();
+                }
+            }
+        }
 
-        // Tap/Click anywhere on the video area (swiper) to play/pause
-        swiper.addEventListener('click', togglePlayPause);
-        
-        // Prevent the play/pause tap action when clicking on a control button
-        document.getElementById('nav-buttons').addEventListener('click', (e) => {
-            e.stopPropagation(); 
-        });
+        swiper.addEventListener('touchstart', e => { touchStartY = e.changedTouches[0].screenY; }, { passive: true });
+        swiper.addEventListener('touchend', e => { touchEndY = e.changedTouches[0].screenY; handleSwipe(); }, { passive: true });
+        swiper.addEventListener('mousedown', e => { touchStartY = e.screenY; });
+        swiper.addEventListener('mouseup', e => { touchEndY = e.screenY; handleSwipe(); });
 
-        document.getElementById('upBtn').addEventListener('click', loadPreviousVideo);
-        document.getElementById('downBtn').addEventListener('click', loadNextVideo);
-        document.getElementById('play-pause-btn').addEventListener('click', togglePlayPause);
-        document.getElementById('mute-unmute-btn').addEventListener('click', toggleMute);
+        // Tap/Click anywhere on the video area (swiper) to play/pause
+        swiper.addEventListener('click', togglePlayPause);
+        
+        // Prevent the play/pause tap action when clicking on a control button
+        document.getElementById('nav-buttons').addEventListener('click', (e) => {
+            e.stopPropagation(); 
+        });
+        document.getElementById('bottom-bar').addEventListener('click', (e) => {
+            e.stopPropagation(); 
+        });
 
-        // Add an event listener for a share button (you'll need to add an element with id="share-btn" in your HTML)
+        document.getElementById('upBtn').addEventListener('click', loadPreviousVideo);
+        document.getElementById('downBtn').addEventListener('click', loadNextVideo);
+        document.getElementById('play-pause-btn').addEventListener('click', togglePlayPause);
+        document.getElementById('mute-unmute-btn').addEventListener('click', toggleMute);
+
         const shareBtn = document.getElementById('share-btn');
         if (shareBtn) {
             shareBtn.addEventListener('click', (e) => {
@@ -662,38 +666,21 @@
             });
         }
 
-        // Add event listener for the close button on the thumbnail (if you include the HTML)
-        const closeBtn = document.getElementById('close-thumbnail-btn');
-        if (closeBtn) {
-            closeBtn.addEventListener('click', () => {
-                thumbnailWrapper.classList.add('hidden');
-            });
-        }
-    });
-    
-    // List of class names you want to hide
-const classesToHide = [
-  'ytp-pause-overlay',
-  'ytp-shorts-title-channel',
-  'ytp-chrome-top-buttons',
-  'ytp-watermark',
-  'yt-uix-sessionlink',
-  'ytp-watermark-small'
-];
+        const closeBtn = document.getElementById('close-thumbnail-btn');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Stop propagation to prevent accidental link click
+                thumbnailWrapper.classList.add('hidden');
+            });
+        }
 
-// Loop through each class name and hide all elements with that class
-classesToHide.forEach(className => {
-  document.querySelectorAll('.' + className).forEach(element => {
-    element.style.display = 'none';
-  });
-});
+        // Make the entire thumbnail wrapper clickable to go to the buy-now link
+        thumbnailWrapper.addEventListener('click', () => {
+            window.open(document.getElementById('buy-now-link').href, '_blank');
+        });
+
+    });
 </script>
 
 </body>
 </html>
-
-
-
-
-
-
