@@ -54,13 +54,35 @@
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            transition: opacity 0.3s ease-in-out;
+            transition: opacity 0.7s ease-in-out;
             pointer-events: none; 
         }
 
         #player.loading {
             opacity: 0;
         }
+        
+        /* Hide YouTube pause overlay */
+.ytp-pause-overlay {
+  display: none !important;
+}
+
+/* Hide Shorts title/channel */
+.ytp-shorts-title-channel {
+  display: none !important;
+}
+
+/* Hide top buttons (e.g., share, settings) */
+.ytp-chrome-top-buttons {
+  display: none !important;
+}
+
+/* Hide watermark */
+.ytp-watermark,
+.yt-uix-sessionlink,
+.ytp-watermark-small {
+  display: none !important;
+}
 
         /* --- THUMBNAIL WRAPPER STYLING --- */
         .thumbnail-wrapper {
@@ -111,7 +133,7 @@
             background: none;
             border: none;
             color: white;
-            font-size: 1.2rem;
+            font-size: 1.4rem;
             font-weight: bold;
             cursor: pointer;
             padding: 0 5px;
@@ -316,7 +338,6 @@
 
     /**
      * Checks the URL for a 'v' parameter and updates the starting index.
-     * **MODIFIED to add external video IDs to the list.**
      */
     function checkURLForVideoId() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -327,109 +348,39 @@
             if (index !== -1) {
                 currentVideoIndex = index;
             } else {
-                // Logic added to fulfill user request: Video ID not found, so add it to the beginning
+                // Add unknown video ID to the beginning for playback
                 const newVideoEntry = {
                     videoId: videoIdFromUrl,
-                    title: `External Video: ${videoIdFromUrl}`, // Placeholder title, could be fetched via YouTube Data API if running server-side
-                    buyNowUrl: document.getElementById('website').onclick.toString().match(/window\.open\('([^']*)'/)[1] || '#', // Use the website link or a default
+                    title: `External Video: ${videoIdFromUrl}`,
+                    buyNowUrl: '#',
                     productThumbnailUrl: `https://img.youtube.com/vi/${videoIdFromUrl}/hqdefault.jpg`
                 };
-                videos.unshift(newVideoEntry); // Add to the start of the array
-                currentVideoIndex = 0; // Ensure we start with this video
-                console.log(`Added external video ID ${videoIdFromUrl} to the list.`);
+                videos.unshift(newVideoEntry);
+                currentVideoIndex = 0;
             }
         }
     }
 
     /**
-     * Updates the Open Graph (OG) meta tags for social sharing fallback.
+     * Updates the browser URL to reflect the currently playing video ID.
      */
-    function updateOGTags(videoData, shareUrl) {
-        const ogTitle = document.getElementById('og-title');
-        const ogImage = document.getElementById('og-image');
-        const ogUrl = document.getElementById('og-url');
-
-        // 1. OG Title: Custom text + video title
-        ogTitle.content = `Check out this video: ${videoData.title}`; 
-        
-        // 2. OG Image: Use the reliable YouTube High-Quality thumbnail URL pattern
-        const youtubeThumbnailUrl = `https://img.youtube.com/vi/${videoData.videoId}/hqdefault.jpg`;
-        ogImage.content = youtubeThumbnailUrl;
-        
-        ogUrl.content = shareUrl;
-
-        // Ensure the page title also matches
-        document.title = videoData.title;
+    function updateURLWithVideoId(videoId) {
+        const shareUrl = `${window.location.origin}${window.location.pathname}?v=${videoId}`;
+        window.history.replaceState({ path: shareUrl }, '', shareUrl);
     }
     
-    // --- Function to share with thumbnail image (Web Share API Level 2) ---
-    async function shareWithThumbnail(videoTitle, videoUrl, thumbnailUrl) {
-        
-        const currentVideo = videos[currentVideoIndex];
-        updateOGTags(currentVideo, videoUrl); // Update OG Tags immediately
-
-        try {
-            // Fetch the thumbnail image as a Blob
-            const response = await fetch(thumbnailUrl);
-            const blob = await response.blob();
-            
-            // Create a File object from the Blob
-            const file = new File([blob], "thumbnail.jpg", { type: blob.type });
-
-            // Prepare the share data with files
-            const shareData = {
-                title: videoTitle, 
-                // FIX IMPLEMENTED HERE: Include the URL in the text body for maximum compatibility 
-                // across messaging apps, ensuring the link is always present with the title.
-                text: `${videoTitle}\nCheck out this video: ${videoUrl}`, 
-                url: videoUrl,
-                files: [file] // Include the thumbnail image file
-            };
-
-            // Check if the system can share the files (Web Share API Level 2)
-            if (navigator.canShare && navigator.canShare({ files: shareData.files })) {
-                await navigator.share(shareData);
-                console.log("Shared successfully with thumbnail!");
-            } else if (navigator.share) {
-                console.warn("Sharing files not supported. Falling back to simple link share.");
-                
-                // Fallback to simple link share (Web Share API Level 1)
-                await navigator.share({
-                    title: shareData.title,
-                    text: shareData.text, // This now includes the URL, which is better for compatibility
-                    url: shareData.url
-                });
-            } else {
-                // Final Fallback: Copy formatted text and link to clipboard
-                const clipboardText = `${videoTitle}\nCheck out this video: ${videoUrl}`;
-                await navigator.clipboard.writeText(clipboardText); 
-                alert('Sharing not supported on this device. Text and link copied to clipboard!'); 
-            }
-        } catch (error) {
-            console.error("Error during sharing:", error);
-            if (navigator.clipboard) {
-                // Fallback in case of share error: Copy formatted text and link to clipboard
-                const clipboardText = `${videoTitle}\nCheck out this video: ${videoUrl}`;
-                await navigator.clipboard.writeText(clipboardText); 
-                alert('Share failed. Text and link copied to clipboard!'); 
-            }
-        }
-    }
-    // ----------------------------------------------------------------------
-
 
     // This function is called automatically when the YouTube API script loads.
     function onYouTubeIframeAPIReady() {
-        // Determine the starting video before player initialization
         checkURLForVideoId(); 
         
         player = new YT.Player('player', {
             height: '100%',
             width: '100%',
-            videoId: videos[currentVideoIndex].videoId, // Start with the determined video
+            videoId: videos[currentVideoIndex].videoId, 
             playerVars: {
                 'playsinline': 1, 
-                'autoplay': 1, // Crucial for automatic play when the page loads
+                'autoplay': 1, 
                 'controls': 0, 
                 'loop': 0, 
                 'modestbranding': 1, 
@@ -439,7 +390,7 @@
             events: {
                 'onReady': onPlayerReady,
                 'onStateChange': onPlayerStateChange,
-                'onError': onPlayerError
+                'onError': onPlayerError 
             }
         });
     }
@@ -447,13 +398,13 @@
     // --- Core Player Functions ---
 
     function onPlayerReady(event) {
-        // Load the *first* video based on the resolved index (from URL or default 0)
         loadVideoByIndex(currentVideoIndex); 
-        
-        // Start playing immediately.
         event.target.playVideo(); 
     }
 
+    /**
+     * Handles automatic skipping when the video ends or an Ad starts.
+     */
     function onPlayerStateChange(event) {
         const state = event.data;
         if (state === YT.PlayerState.PLAYING) {
@@ -463,16 +414,25 @@
             playPauseBtn.textContent = '▶'; 
             playPauseBtn.setAttribute('aria-label', 'Play video');
         } else if (state === YT.PlayerState.ENDED) {
+            loadNextVideo(); // Auto-load next video when the current one ends
+        } else if (state === YT.PlayerState.AD_STARTED) {
+            // Auto-skip when an ad starts
+            console.log("Ad detected. Skipping to the next video automatically.");
             loadNextVideo();
         }
     }
 
+    /**
+     * Handles YouTube Player Errors (e.g., Invalid ID, Video Not Found).
+     */
     function onPlayerError(event) {
         console.error("YouTube Player Error:", event.data);
-        const unavailableErrorCodes = [2, 100, 101, 150];
-        // This handles the user's second request: "if video not avalable in youtube try to play next video"
+        // Common error codes for invalid video/playback issues
+        const unavailableErrorCodes = [2, 100, 101, 150]; 
+        
         if (unavailableErrorCodes.includes(event.data)) {
-            console.log("Video is unavailable. Loading next video automatically.");
+            console.log("Video is unavailable/invalid. Loading next video automatically.");
+            // Load the next video to skip the problematic one
             loadNextVideo();
         }
     }
@@ -488,17 +448,16 @@
         
         currentBuyNowUrl = video.buyNowUrl; 
 
-        // --- Set Thumbnail Image & Control Visibility ---
+        // Update thumbnail/link visibility
         buyNowThumbnail.src = video.productThumbnailUrl || `https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`;
-        
         thumbnailWrapper.classList.add('hidden'); 
-
         if (thumbnailTimeout) clearTimeout(thumbnailTimeout);
 
         player.loadVideoById(video.videoId);
+        updateURLWithVideoId(video.videoId);
         
-        // Apply current mute state
-        if (player.isMuted() || isMuted) { // Check player.isMuted() on first load
+        // Reapply mute state
+        if (player.isMuted() || isMuted) {
             player.mute();
             isMuted = true;
             muteUnmuteBtn.textContent = '🔇';
@@ -510,7 +469,6 @@
             muteUnmuteBtn.setAttribute('aria-label', 'Mute video');
         }
         
-        // Add a small delay for video load and then remove loading state
         setTimeout(() => {
             player.playVideo();
             playerElement.classList.remove('loading');
@@ -526,11 +484,17 @@
         document.getElementById('buy-now-link').href = video.buyNowUrl;
     }
 
+    /**
+     * Moves to the next video, wrapping to the start if needed.
+     */
     function loadNextVideo() {
         const nextIndex = (currentVideoIndex + 1) % videos.length;
         loadVideoByIndex(nextIndex);
     }
 
+    /**
+     * Moves to the previous video, wrapping to the end if needed.
+     */
     function loadPreviousVideo() {
         const prevIndex = (currentVideoIndex - 1 + videos.length) % videos.length;
         loadVideoByIndex(prevIndex);
@@ -558,8 +522,46 @@
         }
     }
 
-    // --- Event Listener Setup ---
+    /**
+     * Retrieves the current video title and share URL, formatting them with \n\n.
+     * Uses the Web Share API or falls back to copy-to-clipboard.
+     */
+    function shareCurrentVideo() {
+        // Get the title from the current video object
+        const video = videos[currentVideoIndex];
+        const shareTitle = video.title;
+        
+        // Get the current URL (which has been updated with the video ID)
+        const shareUrl = window.location.href; 
+
+        // Create the requested format: Title\n\nURL
+        const shareText = shareTitle + '\n\n' + shareUrl;
+
+        // Use Web Share API if available (best practice for mobile sharing)
+        if (navigator.share) {
+            navigator.share({
+                title: shareTitle,
+                text: shareTitle, 
+                url: shareUrl,
+            }).then(() => {
+                console.log('Video shared successfully');
+            }).catch((error) => {
+                console.error('Error sharing:', error);
+            });
+        } else {
+            // Fallback: Copy the formatted text to the clipboard
+            navigator.clipboard.writeText(shareText)
+                .then(() => {
+                    alert(`Share details copied to clipboard:\n\n${shareTitle}\n\n${shareUrl}`);
+                })
+                .catch(err => {
+                    console.error('Could not copy text: ', err);
+                    alert(`Could not share or copy. Please manually copy the following:\n\n${shareText}`);
+                });
+        }
+    }
     
+    // --- Event Listener Setup ---
     document.addEventListener('DOMContentLoaded', () => {
         
         const swiper = document.getElementById('swiper-container');
@@ -571,40 +573,20 @@
 
         function handleSwipe() {
             const deltaY = touchStartY - touchEndY;
-            // Check if it was a vertical swipe, not a short tap
             if (Math.abs(deltaY) > swipeThreshold) {
-                if (deltaY > 0) { // Swiped Up
+                if (deltaY > 0) { // Swiped Up -> Next Video
                     loadNextVideo();
-                } else { // Swiped Down
+                } else { // Swiped Down -> Previous Video
                     loadPreviousVideo();
                 }
-            } else if (Math.abs(deltaY) < 10) {
-                // We let the swiper.addEventListener('click', ...) handle this.
             }
         }
 
-        // Bind touch/mouse events for swiping
         swiper.addEventListener('touchstart', e => { touchStartY = e.changedTouches[0].screenY; }, { passive: true });
         swiper.addEventListener('touchend', e => { touchEndY = e.changedTouches[0].screenY; handleSwipe(); }, { passive: true });
         swiper.addEventListener('mousedown', e => { touchStartY = e.screenY; });
         swiper.addEventListener('mouseup', e => { touchEndY = e.screenY; handleSwipe(); });
 
-
-        // --- Share Button Logic ---
-        document.getElementById('share-btn').addEventListener('click', async () => {
-            const currentVideo = videos[currentVideoIndex];
-            
-            // Construct the share URL with the current video ID
-            const shareUrl = `${window.location.origin}${window.location.pathname}?v=${currentVideo.videoId}`; 
-            
-            // Define the thumbnail URL (High Quality YouTube Thumbnail)
-            const thumbnailUrl = `https://img.youtube.com/vi/${currentVideo.videoId}/hqdefault.jpg`;
-
-            // Execute the advanced share function
-            await shareWithThumbnail(currentVideo.title, shareUrl, thumbnailUrl);
-        });
-
-        // --- Navigation and Controls ---
         // Tap/Click anywhere on the video area (swiper) to play/pause
         swiper.addEventListener('click', togglePlayPause);
         
@@ -618,27 +600,41 @@
         document.getElementById('play-pause-btn').addEventListener('click', togglePlayPause);
         document.getElementById('mute-unmute-btn').addEventListener('click', toggleMute);
 
-        // --- Thumbnail Click Handlers ---
-        thumbnailWrapper.addEventListener('click', (e) => {
-            // If the close button was clicked, stop.
-            if (e.target.id === 'close-thumbnail-btn') {
-                e.stopPropagation();
-                return;
-            }
-            
-            // Otherwise, click opens the buy now link
-            if (currentBuyNowUrl && currentBuyNowUrl !== '#') {
-                window.open(currentBuyNowUrl, '_blank');
-            }
-        });
-        
-        document.getElementById('close-thumbnail-btn').addEventListener('click', () => {
-            thumbnailWrapper.classList.add('hidden');
-        });
+        // ⭐ NEW: Event listener for a potential share button
+        const shareBtn = document.getElementById('share-btn');
+        if (shareBtn) {
+            shareBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent the main video area click event (togglePlayPause)
+                shareCurrentVideo();
+            });
+        }
+
+        // Add event listener for the close button on the thumbnail (if you include the HTML)
+        const closeBtn = document.getElementById('close-thumbnail-btn');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                thumbnailWrapper.classList.add('hidden');
+            });
+        }
     });
+    
+    // List of class names you want to hide
+const classesToHide = [
+  'ytp-pause-overlay',
+  'ytp-shorts-title-channel',
+  'ytp-chrome-top-buttons',
+  'ytp-watermark',
+  'yt-uix-sessionlink',
+  'ytp-watermark-small'
+];
+
+// Loop through each class name and hide all elements with that class
+classesToHide.forEach(className => {
+  document.querySelectorAll('.' + className).forEach(element => {
+    element.style.display = 'none';
+  });
+});
 </script>
 
 </body>
 </html>
-
-
