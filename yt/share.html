@@ -346,7 +346,7 @@ function checkURLForVideoId() {
         if (videos.length > 0) {
             currentVideoIndex = 0; // start from first video in the list
             console.log(`No video ID found in URL. Starting with video ID: ${videos[0].videoId}`);
-            playVideo(videos[currentVideoIndex]); // replace with your play function
+            loadNextVideo();
         } else {
             console.warn("No videos available in the list to play.");
         }
@@ -662,6 +662,7 @@ function checkURLForVideoId() {
 
 </body>
 </html>
+
 
 
 
