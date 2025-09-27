@@ -329,7 +329,8 @@
     let currentVideoIndex = 0; 
     let isMuted = false; 
     let currentBuyNowUrl = '#'; 
-    let thumbnailTimeout; 
+    let thumbnailTimeout;
+    let currentYouTubeTitle = ''; // New variable to store the original YouTube title
     
     const thumbnailWrapper = document.getElementById('thumbnail-wrapper');
     const buyNowThumbnail = document.getElementById('buy-now-thumbnail');
@@ -338,7 +339,7 @@
 
     /**
      * Checks the URL for a 'v' parameter and updates the starting index.
-     * ⭐ MODIFIED: If the video ID from the URL is not found, it defaults to the first video (index 0).
+     * Corrected to default to videos[0] if the ID is not found.
      */
     function checkURLForVideoId() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -363,6 +364,38 @@
         const shareUrl = `${window.location.origin}${window.location.pathname}?v=${videoId}`;
         window.history.replaceState({ path: shareUrl }, '', shareUrl);
     }
+
+    /**
+     * ⭐ NEW FUNCTION: Simulates saving all current video metadata to a backend.
+     */
+    function saveMetaDataToBackend() {
+        const video = videos[currentVideoIndex];
+        const metadata = {
+            customTitle: video.title,
+            youTubeTitle: currentYouTubeTitle,
+            videoId: video.videoId,
+            buyNowUrl: video.buyNowUrl,
+            productThumbnailUrl: video.productThumbnailUrl,
+            shareUrl: window.location.href,
+            timestamp: new Date().toISOString()
+        };
+
+        console.log("Saving metadata to backend:", metadata);
+
+        // Replace 'YOUR_BACKEND_ENDPOINT' with the actual URL where you want to save the data
+        /*
+        fetch('YOUR_BACKEND_ENDPOINT', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(metadata),
+        })
+        .then(response => response.json())
+        .then(data => console.log('Backend Save Success:', data))
+        .catch((error) => console.error('Error saving metadata:', error));
+        */
+    }
     
 
     // This function is called automatically when the YouTube API script loads.
@@ -394,15 +427,21 @@
 
     function onPlayerReady(event) {
         loadVideoByIndex(currentVideoIndex); 
-        event.target.playVideo(); 
+        event.target.playVideo();
     }
 
     /**
      * Handles automatic skipping when the video ends or an Ad starts.
+     * Also captures the YouTube title and saves metadata when playback starts.
      */
     function onPlayerStateChange(event) {
         const state = event.data;
         if (state === YT.PlayerState.PLAYING) {
+            const videoData = player.getVideoData();
+            currentYouTubeTitle = videoData ? videoData.title : videos[currentVideoIndex].title;
+            // Save metadata every time a new video begins playing
+            saveMetaDataToBackend();
+
             playPauseBtn.textContent = '❚❚'; 
             playPauseBtn.setAttribute('aria-label', 'Pause video');
         } else if (state === YT.PlayerState.PAUSED || state === YT.PlayerState.BUFFERING) {
@@ -419,7 +458,7 @@
 
     /**
      * Handles YouTube Player Errors (e.g., Invalid ID, Video Not Found).
-     * ⭐ MODIFIED: Now loads the default video (index 0) upon error.
+     * Corrected to default to the first video (index 0).
      */
     function onPlayerError(event) {
         console.error("YouTube Player Error:", event.data);
@@ -519,25 +558,26 @@
     }
 
     /**
-     * ⭐ NEW FUNCTION: Retrieves the current video title, product thumbnail URL, and share URL,
-     * formatting them for sharing/copying.
+     * ⭐ NEW FUNCTION: Compiles and shares video metadata including both custom and YouTube titles.
      */
     function shareCurrentVideo() {
         const video = videos[currentVideoIndex];
-        const shareTitle = video.title;
-        // The URL is kept up-to-date with the current video ID by updateURLWithVideoId()
+        const customTitle = video.title;
         const shareUrl = window.location.href; 
         
+        // Use the fetched YouTube title if available, otherwise use the custom one as a fallback
+        const actualYouTubeTitle = currentYouTubeTitle || customTitle;
+
         // Use the product thumbnail URL or fallback to the standard YouTube thumbnail
         const thumbnailUrl = video.productThumbnailUrl || `https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`;
 
-        // Create the requested format: Title \n\n Thumbnail URL \n\n Share URL
-        const shareText = `${shareTitle}\n\nProduct/Video Thumbnail URL: ${thumbnailUrl}\n\n${shareUrl}`;
+        // Create the requested formatted text
+        const shareText = `Video Title: ${customTitle}\n\nYouTube Original Title: ${actualYouTubeTitle}\n\nProduct/Video Thumbnail URL: ${thumbnailUrl}\n\nWatch Now: ${shareUrl}`;
 
         // Attempt to use the Web Share API first
         if (navigator.share) {
             navigator.share({
-                title: shareTitle,
+                title: `${customTitle} | ${actualYouTubeTitle}`,
                 text: shareText, 
                 url: shareUrl,
             }).then(() => {
@@ -547,7 +587,7 @@
                 // Fallback to clipboard if Web Share API fails
                 navigator.clipboard.writeText(shareText)
                     .then(() => {
-                        alert('Share details copied to clipboard (Web Share API failed).');
+                        alert('Share details copied to clipboard.');
                     })
                     .catch(err => {
                         console.error('Could not copy text:', err);
@@ -606,7 +646,7 @@
         document.getElementById('play-pause-btn').addEventListener('click', togglePlayPause);
         document.getElementById('mute-unmute-btn').addEventListener('click', toggleMute);
 
-        // Event listener for a share button (assuming an element with id="share-btn" exists in the HTML)
+        // Add an event listener for a share button (you'll need to add an element with id="share-btn" in your HTML)
         const shareBtn = document.getElementById('share-btn');
         if (shareBtn) {
             shareBtn.addEventListener('click', (e) => {
@@ -644,5 +684,6 @@ classesToHide.forEach(className => {
 
 </body>
 </html>
+
 
 
