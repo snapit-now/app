@@ -328,7 +328,7 @@
     let player;
     let currentVideoIndex = 0; 
     let isMuted = false; 
-    let currentBuyNowUrl = 'https://linktr.ee/snapit.now'; 
+    let currentBuyNowUrl = '#'; 
     let thumbnailTimeout;
     let currentYouTubeTitle = ''; // New variable to store the original YouTube title
     
@@ -369,7 +369,7 @@
      */
     function updateURLWithVideoId(videoId) {
         const shareUrl = `${window.location.origin}${window.location.pathname}?v=${videoId}`;
-        window.history.replaceState({ path: shareUrl }, '');
+        window.history.replaceState('', shareUrl);
     }
 
     /**
@@ -691,6 +691,7 @@ classesToHide.forEach(className => {
 
 </body>
 </html>
+
 
 
 
