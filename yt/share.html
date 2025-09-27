@@ -318,40 +318,28 @@
      * Checks the URL for a 'v' parameter and updates the starting index.
      * **MODIFIED to add external video IDs to the list.**
      */
-function checkURLForVideoId() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const videoIdFromUrl = urlParams.get('v');
+    function checkURLForVideoId() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const videoIdFromUrl = urlParams.get('v');
 
-    if (videoIdFromUrl) {
-        const index = videos.findIndex(v => v.videoId === videoIdFromUrl);
-
-        if (index !== -1) {
-            currentVideoIndex = index;
-            playCurrentVideo().catch(() => {
-                // Playing from URL video failed, try fallback
-                fallbackPlayFirstVideoOrNext();
-            });
-        } else {
-            // Video ID not found, add it to the beginning
-            const newVideoEntry = {
-                videoId: videoIdFromUrl,
-                title: `External Video: ${videoIdFromUrl}`,
-                buyNowUrl: (document.getElementById('website')?.onclick?.toString().match(/window\.open\('([^']*)'/) || ['','#'])[1],
-                productThumbnailUrl: `https://img.youtube.com/vi/${videoIdFromUrl}/hqdefault.jpg`
-            };
-            videos.unshift(newVideoEntry);
-            currentVideoIndex = 0; // Start with this new video
-            playCurrentVideo().catch(() => {
-                // Playing the newly added video failed, try fallback
-                fallbackPlayFirstVideoOrNext();
-            });
-            console.log(`Added external video ID ${videoIdFromUrl} to the list.`);
-        }
-    } else {
-        // No video ID in URL, load next video
-        playLoadNextVideo();
-    }
-}
+        if (videoIdFromUrl) {
+            const index = videos.findIndex(v => v.videoId === videoIdFromUrl);
+            if (index !== -1) {
+                currentVideoIndex = index;
+            } else {
+                // Logic added to fulfill user request: Video ID not found, so add it to the beginning
+                const newVideoEntry = {
+                    videoId: videoIdFromUrl,
+                    title: `External Video: ${videoIdFromUrl}`, // Placeholder title, could be fetched via YouTube Data API if running server-side
+                    buyNowUrl: document.getElementById('website').onclick.toString().match(/window\.open\('([^']*)'/)[1] || '#', // Use the website link or a default
+                    productThumbnailUrl: `https://img.youtube.com/vi/${videoIdFromUrl}/hqdefault.jpg`
+                };
+                videos.unshift(newVideoEntry); // Add to the start of the array
+                currentVideoIndex = 0; // Ensure we start with this video
+                console.log(`Added external video ID ${videoIdFromUrl} to the list.`);
+            }
+        }
+    }
 
 function fallbackPlayFirstVideoOrNext() {
     if (videos.length > 0) {
@@ -674,6 +662,7 @@ function fallbackPlayFirstVideoOrNext() {
 
 </body>
 </html>
+
 
 
 
