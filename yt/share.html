@@ -328,7 +328,7 @@
     let player;
     let currentVideoIndex = 0; 
     let isMuted = false; 
-    let currentBuyNowUrl = '#'; 
+    let currentBuyNowUrl = 'https://linktr.ee/snapit.now'; 
     let thumbnailTimeout;
     let currentYouTubeTitle = ''; // New variable to store the original YouTube title
     
@@ -354,11 +354,12 @@
                 const newVideoEntry = {
                     videoId: videoIdFromUrl,
                     title: `External Video: ${videoIdFromUrl}`,
-                    buyNowUrl: '#',
+                    buyNowUrl: 'https://linktr.ee/snapit.now',
                     productThumbnailUrl: `https://img.youtube.com/vi/${videoIdFromUrl}/hqdefault.jpg`
                 };
                 videos.unshift(newVideoEntry);
                 currentVideoIndex = 0;
+                console.log(`Added external video ID ${videoIdFromUrl} to the list.`);
             }
         }
     }
@@ -368,7 +369,7 @@
      */
     function updateURLWithVideoId(videoId) {
         const shareUrl = `${window.location.origin}${window.location.pathname}?v=${videoId}`;
-        window.history.replaceState({ path: shareUrl }, '', shareUrl);
+        window.history.replaceState({ path: shareUrl }, '');
     }
 
     /**
@@ -578,7 +579,7 @@
         const thumbnailUrl = video.productThumbnailUrl || `https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`;
 
         // Create the requested formatted text
-        const shareText = `${actualYouTubeTitle}\n\n${customTitle}\n\nWatch Now: ${shareUrl}`;
+        const shareText = `${actualYouTubeTitle}\n${customTitle}\n\nWatch Now: ${shareUrl}`;
 
         // Attempt to use the Web Share API first
         if (navigator.share) {
@@ -690,6 +691,7 @@ classesToHide.forEach(className => {
 
 </body>
 </html>
+
 
 
 
