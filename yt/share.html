@@ -319,31 +319,40 @@
      * **MODIFIED to add external video IDs to the list.**
      */
 function checkURLForVideoId() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const videoIdFromUrl = urlParams.get('v');
+    const urlParams = new URLSearchParams(window.location.search);
+    const videoIdFromUrl = urlParams.get('v');
 
-    if (videoIdFromUrl) {
-        const index = videos.findIndex(v => v.videoId === videoIdFromUrl);
+    if (videoIdFromUrl) {
+        const index = videos.findIndex(v => v.videoId === videoIdFromUrl);
 
-        if (index !== -1) {
-            currentVideoIndex = index;
-        } else {
-            // Video ID not found, add it to the beginning
-            const newVideoEntry = {
-                videoId: videoIdFromUrl,
-                title: `External Video: ${videoIdFromUrl}`, // Placeholder title
-                buyNowUrl: document.getElementById('website').onclick.toString().match(/window\.open\('([^']*)'/)[1] || '#',
-                productThumbnailUrl: `https://img.youtube.com/vi/${videoIdFromUrl}/hqdefault.jpg`
-            };
-            videos.unshift(newVideoEntry);
-            currentVideoIndex = 0; // Start with this video
-            console.log(`Added external video ID ${videoIdFromUrl} to the list.`);
-        }
-    } else {
-        // No video ID found in URL, load next video
-        playLoadNextVideo();
-    }
+        if (index !== -1) {
+            currentVideoIndex = index;
+        } else {
+            // Video ID not found, add it to the beginning
+            const newVideoEntry = {
+                videoId: videoIdFromUrl,
+                title: `External Video: ${videoIdFromUrl}`, // Placeholder title
+                buyNowUrl: document.getElementById('website')
+                              ?.onclick?.toString()
+                              .match(/window\.open\('([^']*)'/)?.[1] || '#',
+                productThumbnailUrl: `https://img.youtube.com/vi/${videoIdFromUrl}/hqdefault.jpg`
+            };
+            videos.unshift(newVideoEntry);
+            currentVideoIndex = 0; // Start with this video
+            console.log(`Added external video ID ${videoIdFromUrl} to the list.`);
+        }
+    } else {
+        // No video ID found in URL, load first or next video from videos
+        if (videos.length > 0) {
+            currentVideoIndex = 0; // start from first video in the list
+            console.log(`No video ID found in URL. Starting with video ID: ${videos[0].videoId}`);
+            playVideo(videos[currentVideoIndex]); // replace with your play function
+        } else {
+            console.warn("No videos available in the list to play.");
+        }
+    }
 }
+
 
 
     /**
@@ -653,6 +662,7 @@ function checkURLForVideoId() {
 
 </body>
 </html>
+
 
 
 
