@@ -350,8 +350,14 @@
             if (index !== -1) {
                 currentVideoIndex = index;
             } else {
-                // Default to the first video (index 0) if the ID from the URL is not in the list.
-                console.log(`Video ID ${videoIdFromUrl} not found in list. Starting with default video.`);
+                // Add unknown video ID to the beginning for playback
+                const newVideoEntry = {
+                    videoId: videoIdFromUrl,
+                    title: `External Video: ${videoIdFromUrl}`,
+                    buyNowUrl: '#',
+                    productThumbnailUrl: `https://img.youtube.com/vi/${videoIdFromUrl}/hqdefault.jpg`
+                };
+                videos.unshift(newVideoEntry);
                 currentVideoIndex = 0;
             }
         }
@@ -572,7 +578,7 @@
         const thumbnailUrl = video.productThumbnailUrl || `https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`;
 
         // Create the requested formatted text
-        const shareText = `Video Title: ${customTitle}\n\nYouTube Original Title: ${actualYouTubeTitle}\n\nProduct/Video Thumbnail URL: ${thumbnailUrl}\n\nWatch Now: ${shareUrl}`;
+        const shareText = `${actualYouTubeTitle}\n\n${customTitle}\n\nWatch Now: ${shareUrl}`;
 
         // Attempt to use the Web Share API first
         if (navigator.share) {
@@ -684,6 +690,7 @@ classesToHide.forEach(className => {
 
 </body>
 </html>
+
 
 
 
